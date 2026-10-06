@@ -22,12 +22,12 @@ function digitHtml(v){
   let svg = `<svg viewBox="0 0 60 100" role="group" aria-label="입력 ${hexDigit(v)}의 FND">`;
   for (let k = 0; k < 7; k++) {
     const c = bits[k];
-    svg += `<polygon class="s${segClass(c)}" data-k="${k}" points="${SEG_POLY[k]}" tabindex="0" role="checkbox" aria-checked="${ariaChecked(c)}" aria-label="${segAria(v, k, c)}"/>` +
+    svg += `<polygon class="s${segClass(c)}" data-k="${k}" points="${SEG_POLY[k]}" tabindex="-1" role="checkbox" aria-checked="${ariaChecked(c)}" aria-label="${segAria(v, k, c)}"/>` +
            `<text class="sl${segClass(c)}" x="${SEG_LABEL_POS[k][0]}" y="${SEG_LABEL_POS[k][1]}">${SEG_NAMES[k]}</text>`;
   }
   const allX = bits === ALL_X;
   return `<div class="dig" data-v="${v}"><div class="dh"><button type="button" class="dl" title="이 칸을 선택"><b>${hexDigit(v)}</b><span>${bstr(v, 4)}</span></button>` +
-    `<button type="button" class="dx${allX ? ' on' : ''}" aria-pressed="${allX}" aria-label="입력 ${hexDigit(v)} 전체 돈케어" title="이 FND 전체를 X(돈케어)로 · 다시 누르면 비움">X</button></div>${svg}</svg></div>`;
+    `<button type="button" tabindex="-1" class="dx${allX ? ' on' : ''}" aria-pressed="${allX}" aria-label="입력 ${hexDigit(v)} 전체 돈케어" title="이 FND 전체를 X(돈케어)로 · 다시 누르면 비움">X</button></div>${svg}</svg></div>`;
 }
 
 function renderDTable(){
@@ -247,10 +247,38 @@ function syncDigit(v){                          // 칸을 다시 그리지 않�
   dx.classList.toggle('on', allX); dx.setAttribute('aria-pressed', allX);
 }
 
+/* ─ 실행 취소 / 다시 실행: 만든 모양(DS.seg 전체)의 변경 이력. 한 번의 조작이 한 단계다 ─ */
+const HIST = {cur:'', past:[], future:[], max:200};
+const histSnap = () => DS.seg.join(',');
+function syncUndoButtons(){
+  $('#dUndo').disabled = !HIST.past.length;
+  $('#dRedo').disabled = !HIST.future.length;
+}
+function recordHistory(){                        // 바뀐 게 있을 때만 한 단계로 남기고, 다시 실행 이력은 버린다
+  const now = histSnap();
+  if (now === HIST.cur) return;
+  HIST.past.push(HIST.cur);
+  if (HIST.past.length > HIST.max) HIST.past.shift();
+  HIST.cur = now; HIST.future = [];
+  syncUndoButtons();
+}
+function restoreHistory(){
+  DS.seg = HIST.cur.split(',');
+  saveDesign(); renderDesign(); syncUndoButtons();
+}
+function undo(){
+  if (!HIST.past.length) return toast('더 이상 취소할 내용이 없습니다');
+  HIST.future.push(HIST.cur); HIST.cur = HIST.past.pop(); restoreHistory();
+}
+function redo(){
+  if (!HIST.future.length) return toast('다시 실행할 내용이 없습니다');
+  HIST.past.push(HIST.cur); HIST.cur = HIST.future.pop(); restoreHistory();
+}
+
 // 한 칸이 바뀐 뒤 저장하고 진리표·카르노 맵·강조를 갱신
 function commitDigit(v){
   DS.sel = v;
-  saveDesign(); syncDigit(v); renderDTable(); renderKmaps(); markDesignSel();
+  saveDesign(); recordHistory(); syncDigit(v); renderDTable(); renderKmaps(); markDesignSel();
 }
 function toggleSeg(v, k){
   const bits = [...DS.seg[v]];
@@ -265,7 +293,7 @@ function toggleAllX(v){                         // FND 전체 돈케어(X) ↔ �
 
 function replaceDesign(seg, sel = null){
   DS.seg = seg; DS.sel = sel;
-  saveDesign(); renderDesign();
+  saveDesign(); recordHistory(); renderDesign();
 }
 const confirmOverwrite = msg => isBlank() || confirm(msg);
 
@@ -300,13 +328,21 @@ function keyChar(e){
 
 let designEnabled = () => true;                  // 키 입력에 반응할지 (studio.js가 설계 탭일 때만 true가 되게 바꾼다)
 function designKey(e){
-  if (!designEnabled() || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!designEnabled() || e.altKey) return;
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;     // 식 선택 등 입력 컨트롤은 그대로 둔다
+  if (e.ctrlKey || e.metaKey) {                                              // Ctrl+Z 취소, Ctrl+Y / Ctrl+Shift+Z 다시 실행
+    if (e.code !== 'KeyZ' && e.code !== 'KeyY') return;
+    e.preventDefault();
+    if (e.code === 'KeyY' || e.shiftKey) redo(); else undo();
+    return;
+  }
   const v = DS.sel;
   if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {                  // ←/→: 선택한 칸 옮기기
     e.preventDefault();
-    selectDigit(v == null ? 0 : (v + (e.code === 'ArrowRight' ? 1 : 15)) % 16);
+    const next = v == null ? 0 : (v + (e.code === 'ArrowRight' ? 1 : 15)) % 16;
+    selectDigit(next);
+    if (e.target.closest('#digits')) $(`.dig[data-v="${next}"] .dl`).focus();     // 칸 안에 있던 포커스도 같이 옮긴다
     return;
   }
   if (v == null) return;
@@ -360,6 +396,11 @@ $('#digits').onkeydown = e => {                  // Tab으로 세그먼트를 �
   if (!seg) return;
   e.preventDefault(); toggleSeg(Number(seg.closest('.dig').dataset.v), Number(seg.dataset.k));
 };
+// Tab / Shift+Tab은 칸의 이름표 버튼(.dl)만 지나므로 "다음/이전 FND"로 넘어간다. 포커스를 받은 칸이 선택된다
+$('#digits').addEventListener('focusin', e => {
+  const dl = e.target.closest('.dl');
+  if (dl) selectDigit(Number(dl.closest('.dig').dataset.v));
+});
 $('#dTbl').onclick = e => { const tr = e.target.closest('tr[data-v]'); if (tr) selectDigit(Number(tr.dataset.v)); };
 $('#dKmaps').onclick = e => { const c = e.target.closest('.kc'); if (c) selectDigit(Number(c.dataset.v)); };
 $('#dKmaps').onchange = e => { const r = e.target.closest('input.sol-radio'); if (r) pickSolution(Number(r.dataset.k), Number(r.value)); };
@@ -368,6 +409,8 @@ $('#dPos').onclick = () => setKmapMode('pos');
 $('#dBcd').onclick = () => fillStandard('bcd');
 $('#dHex').onclick = () => fillStandard('hex');
 $('#dClear').onclick = clearDesign;
+$('#dUndo').onclick = undo;
+$('#dRedo').onclick = redo;
 $('#dCopy').onclick = guard(async () => { await copyText(designCsv()); toast('진리표를 CSV로 복사했습니다 (16행)'); });
 $('#dSave').onclick = downloadOut;
 addEventListener('keydown', designKey);
@@ -375,5 +418,5 @@ addEventListener('keydown', designKey);
 /* ════════════════════════════════════════════════════════════════
    3. 시작
    ════════════════════════════════════════════════════════════════ */
-loadDesign(); renderDesign();
+loadDesign(); HIST.cur = histSnap(); syncUndoButtons(); renderDesign();
 setKmapMode(store.get('kmode') === 'pos' ? 'pos' : 'sop');

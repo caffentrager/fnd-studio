@@ -225,6 +225,56 @@ test('극성: 표준(BCD) 판정도 극성을 따른다', () => withState(() => 
   eq(segBits(D.rows[0], D).join(''), PAT[8][0]);
 }));
 
+/* ════════════════ 설계 실행 취소 / 다시 실행 ════════════════ */
+function withHistory(fn){                        // 이력·만든 FND·저장값을 되돌린다
+  const keep = {seg:DS.seg.slice(), sel:DS.sel, hist:JSON.parse(JSON.stringify(HIST))};
+  try { return fn(); }
+  finally { DS.seg = keep.seg; DS.sel = keep.sel; Object.assign(HIST, keep.hist); saveDesign(); renderDesign(); syncUndoButtons(); }
+}
+test('이력: 취소하면 이전 모양, 다시 실행하면 되돌아온다', () => withHistory(() => {
+  replaceDesign(Array(16).fill(BLANK));
+  const base = histSnap();
+  toggleSeg(3, 0); toggleSeg(3, 0);
+  eq(DS.seg[3], 'X000000');
+  undo(); eq(DS.seg[3], '1000000');
+  undo(); eq(histSnap(), base);
+  redo(); eq(DS.seg[3], '1000000');
+  redo(); eq(DS.seg[3], 'X000000');
+}));
+test('이력: 새 변경이 생기면 다시 실행 이력은 사라진다', () => withHistory(() => {
+  replaceDesign(Array(16).fill(BLANK));
+  toggleSeg(0, 0); undo();
+  ok(HIST.future.length === 1, '다시 실행 가능');
+  toggleSeg(1, 1);
+  eq(HIST.future.length, 0);
+  redo(); eq(DS.seg[1], '0100000');                // 아무 일도 일어나지 않음
+}));
+test('이력: 같은 모양으로 바꾸면 단계가 생기지 않는다', () => withHistory(() => {
+  replaceDesign(Array(16).fill(BLANK));
+  const n = HIST.past.length;
+  replaceDesign(Array(16).fill(BLANK));
+  eq(HIST.past.length, n);
+}));
+test('이력: 채우기·전체 지우기도 한 단계로 취소된다', () => withHistory(() => {
+  replaceDesign(bcdSpec());
+  replaceDesign(Array(16).fill(BLANK));
+  undo(); eq(DS.seg, bcdSpec());
+}));
+test('이력: 최대 200단계', () => withHistory(() => {
+  replaceDesign(Array(16).fill(BLANK));
+  for (let i = 0; i < 250; i++) toggleSeg(i % 16, i % 7);
+  ok(HIST.past.length <= HIST.max, `${HIST.past.length}단계`);
+}));
+test('이력: 취소 후에도 저장값(localStorage)과 모양이 같다', () => withHistory(() => {
+  replaceDesign(Array(16).fill(BLANK)); toggleSeg(5, 2); undo();
+  eq(JSON.parse(store.get('design')), DS.seg);
+}));
+
+test('설계: Tab으로 지나는 곳은 FND 칸 16개뿐 (세그먼트는 거치지 않는다)', () => {
+  const stops = [...document.querySelectorAll('#digits button, #digits polygon')].filter(e => e.tabIndex >= 0);
+  eq(stops.length, 16); ok(stops.every(e => e.classList.contains('dl')), '이름표 버튼만 Tab 대상');
+});
+
 /* ════════════════ 실행 · 표시 ════════════════ */
 async function runTests(){
   const results = [];

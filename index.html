@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FND Studio</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 100'%3E%3Cpath fill='%23f03535' d='M10 6L14 2H46L50 6L46 10H14ZM52 8L56 12V44L52 48L48 44V12ZM52 52L56 56V88L52 92L48 88V56ZM10 94L14 90H46L50 94L46 98H14ZM8 52L12 56V88L8 92L4 88V56ZM8 8L12 12V44L8 48L4 44V12ZM10 50L14 46H46L50 50L46 54H14Z'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/common.css?v=20261006e">
-<link rel="stylesheet" href="css/viewer.css?v=20261006e">
-<link rel="stylesheet" href="css/designer.css?v=20261006e">
-<link rel="stylesheet" href="css/studio.css?v=20261006e">
+<link rel="stylesheet" href="css/common.css?v=20261006g">
+<link rel="stylesheet" href="css/viewer.css?v=20261006g">
+<link rel="stylesheet" href="css/designer.css?v=20261006g">
+<link rel="stylesheet" href="css/studio.css?v=20261006g">
 </head>
 <body>
 
@@ -29,6 +29,8 @@
     <section class="card">
       <h2><span class="grow">16자리 FND — 세그먼트를 누를 때마다 꺼짐 → 켜짐 → X(돈케어)</span>
         <span class="tools">
+          <button id="dUndo" title="실행 취소 (Ctrl+Z)" aria-label="실행 취소" disabled>↶ 취소</button>
+          <button id="dRedo" title="다시 실행 (Ctrl+Y 또는 Ctrl+Shift+Z)" aria-label="다시 실행" disabled>↷ 다시</button>
           <button id="dBcd" title="0~9는 표준 모양으로, 10~15는 X(돈케어)로 채웁니다">BCD 0–9 채우기</button>
           <button id="dHex" title="0~F를 표준 모양으로 채웁니다">Hex 0–F 채우기</button>
           <button id="dClear">전체 지우기</button>
@@ -37,7 +39,7 @@
       <div class="digits" id="digits"></div>
       <div class="hint">각 칸은 입력 <b>W X Y Z</b>(W가 최상위 비트) 한 가지에 대응합니다. 칸 오른쪽 위 <b>X</b> 버튼은 그 FND 전체를 <b>돈케어</b>로(다시 누르면 비움) 바꿉니다.
         <b>FND 칸을 선택한 뒤 <kbd>0</kbd>–<kbd>9</kbd>, <kbd>A</kbd>–<kbd>Z</kbd>를 누르면 그 글자 모양으로 바뀝니다</b> (한글 입력 상태에서도 동작). <kbd>X</kbd>는 돈케어, <kbd>Backspace</kbd>/<kbd>Delete</kbd>는 지우기, <kbd>←</kbd> <kbd>→</kbd>는 칸 이동입니다.
-        만든 모양은 이 브라우저에 자동 저장됩니다. 세그먼트는 <kbd>Tab</kbd>으로 옮겨 <kbd>Space</kbd>/<kbd>Enter</kbd>로 바꿀 수도 있습니다.</div>
+        만든 모양은 이 브라우저에 자동 저장되며, <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd>(또는 위의 취소·다시 버튼)로 되돌리고 다시 실행할 수 있습니다. <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd>은 다음·이전 FND 칸으로 넘어갑니다.</div>
     </section>
   
     <div class="cols dcols">
@@ -215,10 +217,10 @@
 <input type="file" id="gFileIn" accept=".out" multiple hidden>
 <input type="file" id="gDirIn" webkitdirectory multiple hidden>
 
-<script src="js/common.js?v=20261006e"></script>
-<script src="js/viewer.js?v=20261006e"></script>
-<script src="js/designer.js?v=20261006e"></script>
-<script src="js/grader.js?v=20261006e"></script>
-<script src="js/studio.js?v=20261006e"></script>
+<script src="js/common.js?v=20261006g"></script>
+<script src="js/viewer.js?v=20261006g"></script>
+<script src="js/designer.js?v=20261006g"></script>
+<script src="js/grader.js?v=20261006g"></script>
+<script src="js/studio.js?v=20261006g"></script>
 </body>
 </html>

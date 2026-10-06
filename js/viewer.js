@@ -118,6 +118,7 @@ const S = {
   mode:'bcd',             // 7-세그먼트 판정 기준
   evals:[],               // 행별 판정 결과
   auto:null,              // 자동 재생 타이머
+  galleryAll:false,       // 전체 출력을 칸 수 제한 없이 그릴지
   ports:null,             // vhdl에서 읽은 포트
   inputs:[], cols:[],     // 추정한 입력 신호 / 진리표 열 순서(입력 → 출력)
   handle:null, stamp:'', watch:null,          // 파일 핸들(File System Access API)과 변경 감지
@@ -345,12 +346,18 @@ function renderSegSummary(){
 function renderGallery(){
   const D = S.D;
   if (!D.seg) return;
-  $('#gallery').innerHTML = S.steps.slice(0, CFG.galleryTiles).map(i => {
+  // 칸이 많으면 일부만 그리되, 나머지가 있다는 것과 그중 불일치 수를 알리고 펼칠 수 있게 한다
+  const shown = S.galleryAll ? S.steps : S.steps.slice(0, CFG.galleryTiles), hidden = S.steps.length - shown.length;
+  const hiddenBad = S.steps.slice(shown.length).filter(i => S.evals[i].st === 'bad').length;
+  $('#gallery').innerHTML = shown.map(i => {
     const r = D.rows[i], {st, diffs} = S.evals[i];
     const tip = `시간 ${r.t}` + (diffs ? ` · 불일치: ${diffs.map(k => SEG_NAMES[k]).join(' ')}` : '');
     const wrong = diffs ? `<span class="wg">${diffs.map(k => SEG_NAMES[k]).join(' ')}</span>` : '';
     return `<button class="tile ${st}" data-i="${i}" title="${tip}"><span class="mk">${st === 'ok' ? '✓' : st === 'bad' ? '✗' : ''}</span>${segSvg(segBits(r))}<span class="lb">${esc(rowLabel(r))}</span>${wrong}</button>`;
   }).join('');
+  $('#galleryMore').hidden = !hidden;
+  $('#galleryMore').innerHTML = hidden
+    ? `<span>${S.steps.length}칸 중 ${shown.length}칸만 표시했습니다${hiddenBad ? ` — <b class="bd">나머지에 불일치 ${hiddenBad}개</b>` : ''}</span> <button id="galleryAll">나머지 ${hidden}칸 모두 보기</button>` : '';
   renderSegSummary();
 
   const count = st => S.steps.filter(i => S.evals[i].st === st).length;
@@ -580,7 +587,7 @@ function loadBuffer(buf, name, {keep = false, ports = null, handle = null, stamp
 
   S.D = D;
   if (keep) S.stamp = stamp;
-  else { S.cur = 0; S.wave.ppu = null; S.ports = ports; S.trimEnd = trimEnd; setSource(handle, stamp); }
+  else { S.cur = 0; S.wave.ppu = null; S.ports = ports; S.trimEnd = trimEnd; S.galleryAll = false; setSource(handle, stamp); }
   autoInputs();                                   // 입력 추정이 판정(만든 FND 기준)보다 먼저 필요하다
   computeSteps(); evalAll();
   if (!keep) S.cur = S.steps[0];
@@ -687,7 +694,14 @@ $('#mode').onchange = blurAfter(e => {
 });
 $('#fold').onchange = blurAfter(e => { S.fold = e.target.checked; computeSteps(); renderGallery(); renderTable(); refreshSelection(false); });
 $('#gallery').onclick = e => { const t = e.target.closest('.tile'); if (t) selectRow(Number(t.dataset.i)); };
-$('#segSummary').onclick = e => { const b = e.target.closest('button[data-i]'); if (b) selectRow(Number(b.dataset.i)); };
+$('#segSummary').onclick = e => {
+  const b = e.target.closest('button[data-i]');
+  if (!b) return;
+  const i = Number(b.dataset.i);
+  if (!S.galleryAll && S.steps.indexOf(i) >= CFG.galleryTiles) { S.galleryAll = true; renderGallery(); }   // 아직 안 그린 칸이면 펼쳐서 보여준다
+  selectRow(i);
+};
+$('#galleryMore').onclick = e => { if (e.target.closest('#galleryAll')) { S.galleryAll = true; renderGallery(); refreshSelection(false); } };
 $('#tbl').onclick = e => { const t = e.target.closest('tr[data-i]'); if (t) selectRow(Number(t.dataset.i)); };
 
 // 파형

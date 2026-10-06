@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FND Studio</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 100'%3E%3Cpath fill='%23f03535' d='M10 6L14 2H46L50 6L46 10H14ZM52 8L56 12V44L52 48L48 44V12ZM52 52L56 56V88L52 92L48 88V56ZM10 94L14 90H46L50 94L46 98H14ZM8 52L12 56V88L8 92L4 88V56ZM8 8L12 12V44L8 48L4 44V12ZM10 50L14 46H46L50 50L46 54H14Z'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/common.css?v=20261006a">
-<link rel="stylesheet" href="css/viewer.css?v=20261006a">
-<link rel="stylesheet" href="css/designer.css?v=20261006a">
-<link rel="stylesheet" href="css/studio.css?v=20261006a">
+<link rel="stylesheet" href="css/common.css?v=20261006b">
+<link rel="stylesheet" href="css/viewer.css?v=20261006b">
+<link rel="stylesheet" href="css/designer.css?v=20261006b">
+<link rel="stylesheet" href="css/studio.css?v=20261006b">
 </head>
 <body>
 
@@ -137,6 +137,7 @@
             <h2>전체 출력 <span id="summary" class="pill"></span></h2>
             <div class="segsum" id="segSummary" hidden></div>
             <div class="gallery" id="gallery"></div>
+            <div class="more" id="galleryMore" hidden></div>
             <div class="hint">칸을 누르면 해당 입력으로 이동합니다. 붉은색 칸은 표준 7-세그먼트와 다른 출력이고, 아래 글자가 틀린 세그먼트입니다.</div>
           </section>
   
@@ -178,15 +179,22 @@
             <button data-f="pass" aria-pressed="false">통과<i>0</i></button>
             <button data-f="fail" aria-pressed="false">불일치<i>0</i></button>
             <button data-f="error" aria-pressed="false">오류<i>0</i></button>
+            <button data-f="wait" aria-pressed="false" hidden>대기<i>0</i></button>
+            <button data-f="guess" aria-pressed="false" hidden>입력 추정<i>0</i></button>
           </span>
           <select id="gSort" aria-label="정렬">
             <option value="name">이름순</option>
             <option value="bad">불합격·틀린 칸 많은 순</option>
           </select>
+          <select id="gPolicy" aria-label="채점 방식">
+            <option value="stable">안정 상태로 채점</option>
+            <option value="all">모든 행 엄격 채점</option>
+          </select>
           <span class="tools"><button id="gCopy">CSV 복사</button><button id="gSave">CSV 저장</button></span>
         </div>
         <div class="tablewrap"><table id="gTbl"></table></div>
-        <div class="hint">입력값(0~F)마다 그 입력이 나온 <b>모든 행</b>이 만든 FND와 맞아야 일치입니다. 한 번도 안 나온 입력은 <b>누락</b>이며(전부 돈케어인 입력은 제외), 불일치·누락이 하나라도 있으면 "불일치"입니다. VECTOR가 없는 파일은 입력 신호를 추정해서 채점합니다.
+        <div class="hint">입력값(0~F)마다 <b>안정된 출력</b>(입력이 다음 값으로 바뀌기 직전의 행)이 만든 FND와 맞아야 일치입니다. "모든 행 엄격 채점"은 입력이 바뀐 직후의 과도 상태까지 틀린 것으로 셉니다. 한 번도 안 나온 입력은 <b>누락</b>이며(전부 돈케어인 입력은 제외), 불일치·누락이 하나라도 있으면 "불일치"입니다.
+          입력 신호는 <b>VECTOR</b>가 있으면 그것을 쓰고, 없으면 A–G를 뺀 4개 신호(파일 순서) 또는 값 패턴으로 <b>추정</b>합니다. 표의 "입력 신호" 열에서 맞는지 확인하세요.
           파일 이름을 누르는 대신 <b>검증 탭에서 열기</b>를 누르면 틀린 세그먼트와 파형을 자세히 볼 수 있습니다.</div>
       </div>
     </section>
@@ -198,10 +206,10 @@
 <input type="file" id="gFileIn" accept=".out" multiple hidden>
 <input type="file" id="gDirIn" webkitdirectory multiple hidden>
 
-<script src="js/common.js?v=20261006a"></script>
-<script src="js/viewer.js?v=20261006a"></script>
-<script src="js/designer.js?v=20261006a"></script>
-<script src="js/grader.js?v=20261006a"></script>
-<script src="js/studio.js?v=20261006a"></script>
+<script src="js/common.js?v=20261006b"></script>
+<script src="js/viewer.js?v=20261006b"></script>
+<script src="js/designer.js?v=20261006b"></script>
+<script src="js/grader.js?v=20261006b"></script>
+<script src="js/studio.js?v=20261006b"></script>
 </body>
 </html>

@@ -64,3 +64,4 @@
 .lane.bus{color:var(--accent);font-weight:700}
 #wave{flex:none;display:block;cursor:crosshair}
 
+.more .bd{color:var(--bad)}

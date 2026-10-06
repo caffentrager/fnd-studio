@@ -318,6 +318,7 @@ function displayOrder(D, idxs){
 }
 // 입력 신호(MSB→LSB). 찾지 못하면 빈 배열. 화면 상태와 무관해 채점에서도 쓴다
 function inputsFor(D){
+  if (D.vec?.src === 'map') return D.vec.idx.slice();       // 이름 규칙·직접 지정한 입력은 추정하지 않는다
   const found = detectInputs(D);
   return found ? displayOrder(D, found) : [];
 }

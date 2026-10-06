@@ -1,0 +1,66 @@
+/* 뷰어 전용 스타일: 빈 화면 · 알림 · 출력 검증 · 전체 출력 · 타이밍 파형 */
+.noseg :is(#galleryCard,#big){display:none}
+@media(max-width:940px){                       /* 좁은 화면: 검증 → 전체 출력 → 파형 → 진리표 순서 */
+  #verifyCard{order:1} #galleryCard{order:2} #waveCard{order:3} #tableCard{order:4}
+}
+
+.empty{border:2px dashed var(--line);border-radius:16px;padding:64px 24px;text-align:center;color:var(--muted);background:var(--panel)}
+.empty h1{font-size:20px;color:var(--ink);margin:0 0 8px}
+.empty p{margin:0 0 20px}
+.empty .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.drop{position:fixed;inset:0;z-index:50;background:color-mix(in srgb,var(--accent) 18%,transparent);border:3px dashed var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;color:var(--accent);backdrop-filter:blur(2px)}
+.notes{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.note{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:13px}
+
+/* ───────── 출력 검증 ───────── */
+.big{display:flex;justify-content:center;padding:6px 0 4px}
+.big svg{width:150px;height:auto}
+.vinfo{text-align:center;color:var(--muted);font-size:13px;min-height:20px}
+.vinfo b{color:var(--ink)}
+.verdict{margin:10px 0 12px;padding:8px 12px;border-radius:8px;font-size:13px;text-align:center;background:var(--soft);color:var(--muted);min-height:38px;display:flex;align-items:center;justify-content:center}
+.verdict.ok{background:var(--ok-bg);color:var(--ok)}
+.verdict.bad{background:var(--bad-bg);color:var(--bad)}
+.verdict .nw{white-space:nowrap}
+.verdict .dim{opacity:.7}
+.cmp{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:5px}
+.cmp .k{width:30px;margin-right:4px;text-align:right;font-size:11px;opacity:.75}
+.cmp.head .sg{background:none;font-weight:600;font-size:11px;opacity:.6}
+.sg{display:inline-flex;align-items:center;justify-content:center;width:23px;height:24px;border-radius:5px;font:700 13px var(--mono);background:color-mix(in srgb,currentColor 9%,transparent)}
+.sg.w{background:var(--bad);color:var(--panel)}
+.verdict .fix{margin-top:6px}
+.ctrl{display:grid;grid-template-columns:44px 1fr 1.4fr;gap:8px}
+.ctrl button{min-height:40px}
+#slider{width:100%;margin:12px 0 4px;accent-color:var(--accent)}
+.line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.chip{font:12px var(--mono);background:var(--soft);border-radius:6px;padding:1px 7px;color:var(--b0)}
+.chip.v1{color:var(--b1);font-weight:700}
+.chip.vx{color:var(--bx);font-weight:700}
+.chip i{font-style:normal;opacity:.75;margin-right:4px}
+
+
+/* 갤러리 */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 6px;border-radius:10px;background:var(--soft);border:1px solid transparent;min-height:0}
+.tile svg{width:30px;height:auto}
+.tile .lb{font:600 12px var(--mono);color:var(--muted)}
+.tile .mk{position:absolute;top:3px;right:5px;font-size:11px;font-weight:700;color:var(--ok)}
+.tile.cur{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+.tile.cur .lb{color:var(--ink)}
+.tile.bad{background:var(--bad-bg)}
+.tile.bad :is(.lb,.mk){color:var(--bad)}
+.tile.na{opacity:.6}
+.tile .wg{font:700 11px var(--mono);color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent);border-radius:4px;padding:0 5px;letter-spacing:.05em}
+.segsum{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.segsum .lbl{color:var(--bad);font-size:12px;font-weight:600}
+.segsum button{min-height:28px;padding:2px 10px;font-size:12px;color:var(--bad);border-color:var(--bad);background:var(--bad-bg)}
+.segsum button b{font:700 13px var(--mono)}
+
+
+/* 파형 */
+.wavewrap{display:flex;overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.lanes{position:sticky;left:0;z-index:2;background:var(--panel);border-right:1px solid var(--line);flex:none;padding-top:26px}
+.lane{height:28px;display:flex;align-items:center;padding:0 10px;font:12px var(--mono);white-space:nowrap}
+.lane.bus{color:var(--accent);font-weight:700}
+#wave{flex:none;display:block;cursor:crosshair}
+

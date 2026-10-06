@@ -1,0 +1,32 @@
+/* FND Studio 전용 스타일: 탭 패널 · 검증 탭 도구줄 · 채점 */
+[role=tabpanel]:focus{outline:none}
+.vbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.vbar .file{flex:1 1 200px}
+
+/* 채점 */
+.gdrop{border:2px dashed var(--line);border-radius:12px;padding:36px 16px;text-align:center;color:var(--muted);background:var(--soft)}
+.gdrop b{color:var(--ink)}
+.gdrop .actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.gspec{font-size:13px;color:var(--muted);margin:0 0 10px}
+.gspec b{color:var(--ink)}
+.gwarn{color:var(--warn);background:var(--warn-bg);padding:3px 10px;border-radius:8px}
+.gtop{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
+.gtop .gsum{flex:1 1 260px;font-size:14px}
+.gchips{display:inline-flex;gap:4px;flex-wrap:wrap}
+.gchips button{min-height:28px;padding:0 10px;font-size:12px;border-radius:999px}
+.gchips button i{font-style:normal;margin-left:6px;color:var(--muted)}
+.gchips button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.gchips button.on i{color:inherit;opacity:.85}
+.gp{display:inline-block;padding:0 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--soft);color:var(--muted)}
+.gp.pass{background:var(--ok-bg);color:var(--ok)}
+.gp.fail{background:var(--bad-bg);color:var(--bad)}
+.gp.error{background:var(--warn-bg);color:var(--warn)}
+#gTbl{font-family:inherit;font-size:13px}
+#gTbl th,#gTbl td{text-align:left}
+#gTbl td.gnum{font:600 13px var(--mono);text-align:right}
+#gTbl td.gnum small{font-weight:400;color:var(--muted)}
+#gTbl td.gname{max-width:280px;overflow:hidden;text-overflow:ellipsis}
+#gTbl td.gdetail{font:12.5px var(--mono);white-space:pre-wrap;word-break:break-word}
+#gTbl tbody tr{cursor:default}
+.gopen{min-height:26px;padding:0 10px;font-size:12px}
+.gopen:disabled{opacity:.4;cursor:default}

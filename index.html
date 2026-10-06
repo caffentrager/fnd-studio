@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FND Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 100'%3E%3Cpath fill='%23f03535' d='M10 6L14 2H46L50 6L46 10H14ZM52 8L56 12V44L52 48L48 44V12ZM52 52L56 56V88L52 92L48 88V56ZM10 94L14 90H46L50 94L46 98H14ZM8 52L12 56V88L8 92L4 88V56ZM8 8L12 12V44L8 48L4 44V12ZM10 50L14 46H46L50 50L46 54H14Z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/common.css?v=20261006a">
+<link rel="stylesheet" href="css/viewer.css?v=20261006a">
+<link rel="stylesheet" href="css/designer.css?v=20261006a">
+<link rel="stylesheet" href="css/studio.css?v=20261006a">
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">FND Studio</div>
+  <nav class="tabs" role="tablist" aria-label="작업 선택">
+    <button class="tab on" role="tab" data-tab="design" id="tabDesign" aria-controls="panelDesign" aria-selected="true">설계</button>
+    <button class="tab" role="tab" data-tab="verify" id="tabVerify" aria-controls="panelVerify" aria-selected="false" tabindex="-1">검증</button>
+    <button class="tab" role="tab" data-tab="grade" id="tabGrade" aria-controls="panelGrade" aria-selected="false" tabindex="-1">채점</button>
+  </nav>
+  <span class="grow"></span>
+  <button id="btnTheme" class="ghost" title="라이트/다크 전환" aria-label="테마 전환">◐</button>
+</header>
+
+<main>
+  <!-- 설계: 16자리 FND를 만들고 진리표 · 카르노 맵으로 보기 -->
+  <section id="panelDesign" role="tabpanel" aria-labelledby="tabDesign" tabindex="-1">
+    <section class="card">
+      <h2><span class="grow">16자리 FND — 세그먼트를 누를 때마다 꺼짐 → 켜짐 → X(돈케어)</span>
+        <span class="tools">
+          <button id="dBcd" title="0~9는 표준 모양으로, 10~15는 X(돈케어)로 채웁니다">BCD 0–9 채우기</button>
+          <button id="dHex" title="0~F를 표준 모양으로 채웁니다">Hex 0–F 채우기</button>
+          <button id="dClear">전체 지우기</button>
+        </span>
+      </h2>
+      <div class="digits" id="digits"></div>
+      <div class="hint">각 칸은 입력 <b>W X Y Z</b>(W가 최상위 비트) 한 가지에 대응합니다. 칸 오른쪽 위 <b>X</b> 버튼은 그 FND 전체를 <b>돈케어</b>로(다시 누르면 비움) 바꿉니다.
+        <b>FND 칸을 선택한 뒤 <kbd>0</kbd>–<kbd>9</kbd>, <kbd>A</kbd>–<kbd>Z</kbd>를 누르면 그 글자 모양으로 바뀝니다</b> (한글 입력 상태에서도 동작). <kbd>X</kbd>는 돈케어, <kbd>Backspace</kbd>/<kbd>Delete</kbd>는 지우기, <kbd>←</kbd> <kbd>→</kbd>는 칸 이동입니다.
+        만든 모양은 이 브라우저에 자동 저장됩니다. 세그먼트는 <kbd>Tab</kbd>으로 옮겨 <kbd>Space</kbd>/<kbd>Enter</kbd>로 바꿀 수도 있습니다.</div>
+    </section>
+  
+    <div class="cols dcols">
+      <div class="col">
+        <section class="card">
+          <h2><span class="grow">진리표 (W X Y Z → A~G)</span>
+            <span class="tools">
+              <button id="dCopy" title="W,X,Y,Z,A~G를 CSV 형식으로 복사합니다">CSV 복사</button>
+              <button id="dSave" title="뷰어에서 열 수 있는 MySim 결과(.out) 파일로 저장합니다">.out 저장</button>
+              <button id="dOpen" title="지금 만든 FND를 검증 탭에서 열어 파형·판정을 봅니다">검증 탭에서 보기</button>
+            </span>
+          </h2>
+          <div class="tablewrap"><table id="dTbl"></table></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="card">
+          <h2><span class="grow">카르노 맵</span>
+            <span class="seg2" role="group" aria-label="묶는 방식">
+              <button id="dSop" class="on" aria-pressed="true" title="1을 묶어 곱의 합(SoP)으로 나타냅니다">SoP · 1 묶기</button>
+              <button id="dPos" aria-pressed="false" title="0을 묶어 합의 곱(PoS)으로 나타냅니다">PoS · 0 묶기</button>
+            </span>
+          </h2>
+          <div class="kmaps" id="dKmaps"></div>
+          <div class="hint">행은 <b>W X</b>, 열은 <b>Y Z</b>이며 그레이 코드 순서입니다. 칸 모서리의 작은 숫자는 입력값(0~15)이고, 노란 <b>X</b>는 돈케어입니다. 같은 색의 묶음과 식의 항이 서로 대응하며, 가장자리를 넘어 이어지는 묶음은 양쪽 끝에 열린 모양으로 그려집니다. 최적의 식이 여러 개면 목록에서 고를 수 있고, 고른 식만 색이 입혀집니다. 칸을 누르면 해당 입력이 FND와 진리표에서도 강조됩니다.</div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- 검증: mysim.out을 열어 기준(BCD · Hex · 만든 FND)과 비교 -->
+  <section id="panelVerify" role="tabpanel" aria-labelledby="tabVerify" tabindex="-1" hidden>
+    <div class="vbar">
+      <div class="file" id="fileInfo">파일을 열어주세요</div>
+      <label class="chk" id="watchWrap" hidden title="시뮬레이션을 다시 돌려 파일이 바뀌면 자동으로 다시 읽습니다"><input type="checkbox" id="watch"> 변경 자동 감지</label>
+      <button id="btnReload" class="ghost" hidden>다시 읽기</button>
+      <button id="btnDemo" class="ghost">데모</button>
+      <button id="btnOpen" class="primary">파일 열기</button>
+    </div>
+    <section id="empty" class="empty">
+      <h1>mysim.out 파일을 여기에 끌어다 놓으세요</h1>
+      <p>MyLogic 시뮬레이션 결과(.out)를 열어 진리표, 7-세그먼트 출력, 타이밍 파형을 확인합니다.<br>같은 폴더의 <b>vhdl</b> 파일도 함께 놓으면 진리표에서 입력 신호를 정확히 구분합니다.</p>
+      <div class="actions">
+        <button class="primary" id="btnOpen2">파일 열기</button>
+        <button id="btnDemo2">데모로 둘러보기</button>
+      </div>
+    </section>
+  
+    <div id="content" hidden>
+      <div class="notes" id="notes"></div>
+  
+      <div class="cols">
+        <div class="col">
+          <section class="card" id="verifyCard">
+            <h2>출력 검증</h2>
+            <div class="big" id="big"></div>
+            <div class="vinfo" id="vinfo"></div>
+            <div class="verdict" id="verdict" role="status"></div>
+            <div class="ctrl">
+              <button id="bFirst" title="처음으로 (Home)" aria-label="처음으로">⏮</button>
+              <button id="bPrev" title="이전 (←)">◀ 이전</button>
+              <button id="bNext" class="primary" title="다음 (→ 또는 Space)">다음 출력 확인 ▶</button>
+            </div>
+            <input type="range" id="slider" min="0" max="0" value="0" aria-label="단계 이동">
+            <div class="line">
+              <span id="stepText" class="mono"></span>
+              <span class="grow"></span>
+              <label class="chk"><input type="checkbox" id="auto"> 자동 재생</label>
+              <select id="speed" aria-label="재생 속도">
+                <option value="1500">느리게</option>
+                <option value="800" selected>보통</option>
+                <option value="300">빠르게</option>
+              </select>
+            </div>
+            <div class="line">
+              <span>검증 기준</span>
+              <select id="mode" aria-label="검증 기준">
+                <option value="bcd">BCD 0–9</option>
+                <option value="hex">Hex 0–F</option>
+                <option value="custom">만든 FND</option>
+                <option value="off">끄기</option>
+              </select>
+              <span class="grow"></span>
+              <label class="chk" id="foldWrap" title="같은 값이 반복되는 행은 처음 한 번만 봅니다"><input type="checkbox" id="fold" checked> 반복 행 접기</label>
+            </div>
+            <div class="chips" id="chips"></div>
+          </section>
+  
+          <section class="card" id="tableCard">
+            <h2>진리표</h2>
+            <div class="tablewrap" id="tableWrap"><table id="tbl"></table></div>
+          </section>
+        </div>
+  
+        <div class="col">
+          <section class="card" id="galleryCard">
+            <h2>전체 출력 <span id="summary" class="pill"></span></h2>
+            <div class="segsum" id="segSummary" hidden></div>
+            <div class="gallery" id="gallery"></div>
+            <div class="hint">칸을 누르면 해당 입력으로 이동합니다. 붉은색 칸은 표준 7-세그먼트와 다른 출력이고, 아래 글자가 틀린 세그먼트입니다.</div>
+          </section>
+  
+          <section class="card" id="waveCard">
+            <h2><span class="grow">타이밍 파형</span>
+              <span class="tools"><button id="zOut" aria-label="축소">−</button><button id="zIn" aria-label="확대">＋</button><button id="zFit">맞춤</button></span>
+            </h2>
+            <div class="wavewrap" id="waveWrap"><div class="lanes" id="lanes"></div><canvas id="wave"></canvas></div>
+            <div class="hint">파형을 누르면 그 시점으로 이동 · <kbd>Ctrl</kbd>+휠로 확대/축소 · 키보드 <kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> <kbd>Home</kbd></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 채점: 여러 학생의 .out을 한 번에 만든 FND와 비교 -->
+  <section id="panelGrade" role="tabpanel" aria-labelledby="tabGrade" tabindex="-1" hidden>
+    <section class="card">
+      <h2><span class="grow">일괄 채점 — 여러 학생의 .out을 만든 FND와 비교</span>
+        <span class="tools">
+          <button id="gPick">파일 선택</button>
+          <button id="gFolder">폴더 선택</button>
+          <button id="gClear">지우기</button>
+        </span>
+      </h2>
+      <p class="gspec" id="gSpec"></p>
+
+      <div class="gdrop" id="gDrop">
+        <p><b>.out 파일 여러 개 또는 폴더</b>를 여기에 끌어다 놓으세요.</p>
+        <p>학생별 폴더째 놓으면 안쪽의 <b>.out</b>을 모두 찾아 채점합니다. 파일은 이 브라우저 안에서만 읽습니다.</p>
+        <div class="actions"><button class="primary" id="gPick2">파일 선택</button><button id="gFolder2">폴더 선택</button></div>
+      </div>
+
+      <div id="gBody" hidden>
+        <div class="gtop">
+          <div class="gsum" id="gSummary"></div>
+          <span class="gchips" id="gChips" role="group" aria-label="결과 필터">
+            <button data-f="all" aria-pressed="true">전체<i>0</i></button>
+            <button data-f="pass" aria-pressed="false">통과<i>0</i></button>
+            <button data-f="fail" aria-pressed="false">불일치<i>0</i></button>
+            <button data-f="error" aria-pressed="false">오류<i>0</i></button>
+          </span>
+          <select id="gSort" aria-label="정렬">
+            <option value="name">이름순</option>
+            <option value="bad">불합격·틀린 칸 많은 순</option>
+          </select>
+          <span class="tools"><button id="gCopy">CSV 복사</button><button id="gSave">CSV 저장</button></span>
+        </div>
+        <div class="tablewrap"><table id="gTbl"></table></div>
+        <div class="hint">입력값(0~F)마다 그 입력이 나온 <b>모든 행</b>이 만든 FND와 맞아야 일치입니다. 한 번도 안 나온 입력은 <b>누락</b>이며(전부 돈케어인 입력은 제외), 불일치·누락이 하나라도 있으면 "불일치"입니다. VECTOR가 없는 파일은 입력 신호를 추정해서 채점합니다.
+          파일 이름을 누르는 대신 <b>검증 탭에서 열기</b>를 누르면 틀린 세그먼트와 파형을 자세히 볼 수 있습니다.</div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<div class="drop" id="drop" hidden></div>
+<input type="file" id="fileIn" multiple hidden>
+<input type="file" id="gFileIn" accept=".out" multiple hidden>
+<input type="file" id="gDirIn" webkitdirectory multiple hidden>
+
+<script src="js/common.js?v=20261006a"></script>
+<script src="js/viewer.js?v=20261006a"></script>
+<script src="js/designer.js?v=20261006a"></script>
+<script src="js/grader.js?v=20261006a"></script>
+<script src="js/studio.js?v=20261006a"></script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+/* MySim 공통 스타일: 토큰 · 기본 요소 · 헤더/탭 · 카드 · 표 · 7-세그먼트. 뷰어와 디자이너가 함께 쓴다 */
+/* ───────── 토큰 ───────── */
+:root{
+  --bg:#f4f5f8;--panel:#fff;--ink:#181c24;--muted:#667085;--line:#e2e5eb;--soft:#f1f3f7;
+  --accent:#2b5fd9;--accent-ink:#fff;
+  --ok:#12803c;--ok-bg:#e4f5ea;--bad:#c62828;--bad-bg:#fdeaea;--warn:#a15c00;--warn-bg:#fff2dc;
+  --seg-on:#f03535;--seg-off:#e6e9ef;--seg-x:#f5a524;
+  --b1:#0e7c66;--b0:#8a93a3;--bx:#c47a00;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --mono:Consolas,"D2Coding",monospace;
+  /* 카르노 맵 묶음 색: 앞쪽 5개가 서로 가장 멀도록 정렬 (빨강·파랑·초록·주황·보라) */
+  --k0:#e6194b;--k1:#4363d8;--k2:#2e9d3a;--k3:#f58231;--k4:#911eb4;--k5:#00a5a5;--k6:#7f8c8d;--k7:#b5a000;
+  color-scheme:light;
+}
+:root[data-theme=dark]{
+  --bg:#0f1218;--panel:#171b23;--ink:#e6e9ef;--muted:#98a2b3;--line:#272d38;--soft:#1e232d;
+  --accent:#6f9bff;--accent-ink:#0b1020;
+  --ok:#4ade80;--ok-bg:#12281b;--bad:#ff7b7b;--bad-bg:#331717;--warn:#fbbf24;--warn-bg:#33270e;
+  --seg-on:#ff4d4d;--seg-off:#262c37;--seg-x:#f5a524;
+  --b1:#4fd1b5;--b0:#6b7484;--bx:#fbbf24;
+  --shadow:none;
+  --k0:#ff5c7a;--k1:#7b93ff;--k2:#4ccf5a;--k3:#ffa04d;--k4:#c77dff;--k5:#2ad1d1;--k6:#a8b0ba;--k7:#e6d84a;
+  color-scheme:dark;
+}
+
+/* ───────── 기본 ───────── */
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI","Malgun Gothic",system-ui,sans-serif}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;min-height:34px}
+button:hover{background:var(--soft)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
+button.ghost{background:transparent}
+select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 8px;min-height:32px}
+:is(button,select,input):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h2{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.grow{flex:1}
+.mono{font-family:var(--mono)}
+.hint{color:var(--muted);font-size:12px;margin-top:8px}
+kbd{font:11px var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.chk{display:inline-flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer;user-select:none}
+.pill{font-size:12px;font-weight:600;border-radius:999px;padding:1px 10px;background:var(--soft);color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.tools{display:inline-flex;gap:4px}
+.tools button{min-height:26px;padding:0 9px;font-size:12px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+/* ───────── 레이아웃 ───────── */
+.bar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.brand{font-size:16px;font-weight:700}
+.file{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 200px}
+.file b{color:var(--ink);font-weight:600}
+main{max-width:1320px;margin:0 auto;padding:16px 20px 40px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);min-width:0}
+.cols{display:grid;grid-template-columns:var(--lcol,420px) minmax(0,1fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media(max-width:940px){.cols{grid-template-columns:1fr}.col{display:contents}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:60;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:90vw}
+
+/* 7-세그먼트 */
+.s{fill:var(--seg-off);transition:fill .12s}
+.s.on{fill:var(--seg-on)}
+.s.x{fill:var(--seg-x)}
+.s.d{stroke:var(--accent);stroke-width:1.8;stroke-dasharray:3 2;stroke-linejoin:round}
+.sl{font:600 6px system-ui,sans-serif;fill:var(--muted);text-anchor:middle;dominant-baseline:central;pointer-events:none;opacity:.85}
+.sl.on{fill:#fff}
+
+
+/* 진리표 */
+.tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:separate;border-spacing:0;font:12.5px var(--mono);width:100%}
+th,td{padding:3px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+thead th{position:sticky;top:0;background:var(--soft);z-index:2;font-weight:600;color:var(--muted)}
+th.tm,td.tm{position:sticky;left:0;background:var(--panel);text-align:right;z-index:1;border-right:1px solid var(--line)}
+thead th.tm{z-index:3;background:var(--soft)}
+th.in{color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+th.seg{color:var(--accent)}
+th.sep,td.sep{border-right:2px solid var(--muted)}
+td.b0{color:var(--b0)}
+td.b1{color:var(--b1);font-weight:700}
+td.bx{color:var(--bx);font-weight:700;background:var(--warn-bg)}
+td.wr{outline:2px solid var(--bad);outline-offset:-2px;background:var(--bad-bg);color:var(--bad);font-weight:700}
+td.vv{font-weight:700;color:var(--ink);border-left:1px solid var(--line)}
+td.vv .hx{margin-left:6px;font-weight:400;color:var(--muted)}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--soft)}
+tbody tr.cur td{background:color-mix(in srgb,var(--accent) 16%,var(--panel))}
+tbody tr.cur td.tm{box-shadow:inset 3px 0 0 var(--accent)}
+.more{padding:8px;color:var(--muted);text-align:center;font-size:12px}
+
+
+/* ───────── 탭 ───────── */
+.tabs{display:inline-flex;gap:2px;padding:3px;background:var(--soft);border-radius:10px}
+.tab{border:0;background:transparent;min-height:30px;padding:3px 14px;border-radius:8px;color:var(--muted);font-weight:600}
+.tab:hover{background:transparent;color:var(--ink)}
+.tab.on,.tab.on:hover{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+a.tab{display:inline-flex;align-items:center;text-decoration:none}
+
+/* 링크를 버튼처럼 보이게 */
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.tools .btn{min-height:26px;padding:0 9px;font-size:12px}

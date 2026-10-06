@@ -1,0 +1,62 @@
+/* 디자이너 전용 스타일: 16자리 FND 편집기 · 카르노 맵 */
+.dcols{--lcol:480px;margin-top:16px}
+
+/* ───────── FND 만들기 ───────── */
+.digits{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}
+@media(max-width:940px){.digits{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:480px){.digits{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dig{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px 10px;background:var(--soft);border:2px solid transparent;border-radius:12px}
+.dig.cur{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--panel))}
+.dig .dh{display:flex;align-items:center;justify-content:space-between;gap:4px;width:100%}
+.dig .dl{display:flex;align-items:baseline;gap:6px;font-family:var(--mono);cursor:pointer;background:none;border:0;border-radius:6px;padding:2px 4px;min-height:0;color:inherit}
+.dig .dl:hover{background:var(--panel)}
+.dig .dx{flex:none;width:22px;height:22px;min-height:0;padding:0;border-radius:6px;font:700 11px var(--mono);color:var(--muted)}
+.dig .dx:hover{border-color:var(--bx);color:var(--bx)}
+.dig .dx.on{background:var(--warn-bg);border-color:var(--bx);color:var(--bx)}
+.dig .dl b{font-size:16px}
+.dig .dl span{font-size:11px;color:var(--muted);letter-spacing:.08em}
+.dig svg{width:min(76px,100%);height:auto}
+.dig .s{cursor:pointer}
+.dig .s:hover,.dig .s:focus-visible{stroke:var(--accent);stroke-width:2;outline:none}
+.dig .sl{font-size:7px}
+.dig .sl.x{fill:#3b2a00}
+
+/* 카르노 맵 */
+.kmaps{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:12px}
+.kmw{background:var(--soft);border-radius:10px;padding:10px;min-width:0}
+.kmw .kh{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:26px;margin-bottom:4px}
+.kmw .ttl{font:700 13px var(--mono)}
+.kmw .ttl small{font-weight:400;color:var(--muted);margin-left:4px}
+.kmw .kh .cnt{font-size:11px;font-weight:600;padding:0 8px;border-radius:999px;background:var(--panel);color:var(--muted)}
+/* 최적의 식이 여러 개일 때: 식을 나열해 고른다. 고른 식만 색을 입혀 도형과 대응시킨다 */
+.sols{display:flex;flex-direction:column;gap:3px;margin-top:8px;max-height:184px;overflow:auto}
+.sol{position:relative;display:flex;align-items:flex-start;gap:7px;padding:4px 6px;border:1px solid transparent;border-radius:8px;cursor:pointer;font:12.5px/1.6 var(--mono);color:var(--muted)}
+.sol:hover{background:var(--panel)}
+.sol.on{background:var(--panel);border-color:var(--line);color:var(--ink)}
+.sol:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.sol input{position:absolute;opacity:0;pointer-events:none}
+.sol .no{flex:none;width:18px;height:18px;margin-top:2px;border-radius:50%;border:1.5px solid var(--b0);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.sol.on .no{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sol .se{min-width:0;overflow-wrap:anywhere}
+/* 칸 크기를 고정해 두면 묶음 도형(.loops)을 픽셀 좌표로 정확히 그릴 수 있다. 값은 JS의 KM 상수와 같아야 한다 */
+.km{position:relative;display:grid;grid-template-columns:26px repeat(4,38px);grid-template-rows:18px repeat(4,36px);gap:2px;width:max-content}
+.km .cn{font:8px var(--mono);color:var(--muted);display:flex;align-items:flex-end;justify-content:flex-end;white-space:nowrap;overflow:hidden}
+.km :is(.ch,.rh){font:600 11px var(--mono);color:var(--muted);display:flex;align-items:center;justify-content:center}
+.loops{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.loops path{fill:none;stroke-width:3;stroke-linecap:round;opacity:.9}
+.kmw .ex{margin-top:8px;font:13px/1.7 var(--mono);overflow-wrap:anywhere}
+.kmw .ex .eq{color:var(--muted)}
+.term span+span{margin-left:.12em}
+.ov{text-decoration:overline;text-decoration-thickness:1.5px}
+.seg2{display:inline-flex;gap:2px;padding:2px;background:var(--soft);border-radius:8px}
+.seg2 button{border:0;background:transparent;min-height:26px;padding:0 10px;font-size:12px;font-weight:600;color:var(--muted)}
+.seg2 button:hover{background:transparent;color:var(--ink)}
+.seg2 button.on,.seg2 button.on:hover{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+.pos .kc.v0{color:var(--bad);font-weight:700;background:color-mix(in srgb,var(--bad) 10%,var(--panel))}
+.pos .kc.v1{color:var(--b0);font-weight:400;background:var(--panel)}
+.kc{position:relative;display:flex;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:5px;font:700 14px var(--mono);color:var(--b0);cursor:pointer}
+.kc:hover{border-color:var(--accent)}
+.kc.v1{color:var(--b1);background:color-mix(in srgb,var(--b1) 13%,var(--panel))}
+.kc.vx{color:var(--bx);background:var(--warn-bg)}
+.kc.cur{outline:2px solid var(--accent);outline-offset:1px;z-index:1}
+.kc .m{position:absolute;top:1px;left:3px;font:400 8px var(--mono);color:var(--muted)}

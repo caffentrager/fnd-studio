@@ -1,0 +1,21 @@
+# 시뮬레이션 결과 등 개인 데이터는 올리지 않는다
+*.out
+*.OUT
+vhdl
+mysim.*
+*.exe
+
+# 단, 개인 정보를 제거한 샘플은 올린다
+!samples/
+!samples/*.out
+!samples/*.vhdl
+
+# 편집기 · 도구
+.claude/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# 교수님 PC에만 두는 문서 (공개 저장소에 올리지 않음)
+*.local.md

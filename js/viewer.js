@@ -15,7 +15,6 @@ const CFG = {
   watchMs:        1500,   // 파일 변경 확인 주기
   tickMinPx:      70,     // 파형 시간 눈금 최소 간격
   maxCanvasPx:    15000,  // 파형 캔버스 최대 폭
-  markerGapRatio: 20,     // 이 배수보다 멀리 떨어진 마지막 행은 "MAX_TIME 마커"로 본다
 };
 
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -427,12 +426,13 @@ const LANE_H = 28, HEAD_H = 26, WAVE_PAD = 8;
 
 function buildWave(){
   const D = S.D, w = S.wave;
-  // 마지막 행이 MAX_TIME 마커처럼 멀리 떨어져 있고 값이 같으면 파형에서는 제외
+  // 마지막 행이 MAX_TIME에 찍힌 "끝 표시"(바로 앞 행과 값이 같음)면 파형에서는 제외.
+  // MAX_TIME에 있어도 값이 바뀌었거나, MAX_TIME가 아닌 시각의 행은 실제 상태이므로 남긴다
   w.rows = D.rows.slice();
   const gaps = w.rows.slice(1).map((r, i) => r.t - w.rows[i].t).sort((a, b) => a - b);
   const median = gaps.length ? gaps[gaps.length >> 1] || 1 : 1;
   const [a, b] = [w.rows.at(-1), w.rows.at(-2)];
-  if (w.rows.length > 2 && a.t - b.t > CFG.markerGapRatio * median && a.bits === b.bits) w.rows.pop();
+  if (w.rows.length > 2 && D.maxTime != null && a.t === D.maxTime && a.bits === b.bits) w.rows.pop();
   w.t0 = w.rows[0].t;
   w.tEnd = w.rows.at(-1).t + (w.rows.length > 1 ? median : 1);
 

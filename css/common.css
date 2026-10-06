@@ -1,11 +1,11 @@
 /* MySim 공통 스타일: 토큰 · 기본 요소 · 헤더/탭 · 카드 · 표 · 7-세그먼트. 뷰어와 디자이너가 함께 쓴다 */
 /* ───────── 토큰 ───────── */
 :root{
-  --bg:#f4f5f8;--panel:#fff;--ink:#181c24;--muted:#667085;--line:#e2e5eb;--soft:#f1f3f7;
+  --bg:#f4f5f8;--panel:#fff;--ink:#181c24;--muted:#5f697c;--line:#e2e5eb;--soft:#f1f3f7;
   --accent:#2b5fd9;--accent-ink:#fff;
-  --ok:#12803c;--ok-bg:#e4f5ea;--bad:#c62828;--bad-bg:#fdeaea;--warn:#a15c00;--warn-bg:#fff2dc;
+  --ok:#0f7a38;--ok-bg:#e4f5ea;--bad:#c62828;--bad-bg:#fdeaea;--warn:#a15c00;--warn-bg:#fff2dc;
   --seg-on:#f03535;--seg-off:#e6e9ef;--seg-x:#f5a524;
-  --b1:#0e7c66;--b0:#8a93a3;--bx:#c47a00;
+  --b1:#0e7c66;--b0:#636d80;--bx:#9c5b00;
   --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
   --mono:Consolas,"D2Coding",monospace;
   /* 카르노 맵 묶음 색: 앞쪽 5개가 서로 가장 멀도록 정렬 (빨강·파랑·초록·주황·보라) */
@@ -17,7 +17,7 @@
   --accent:#6f9bff;--accent-ink:#0b1020;
   --ok:#4ade80;--ok-bg:#12281b;--bad:#ff7b7b;--bad-bg:#331717;--warn:#fbbf24;--warn-bg:#33270e;
   --seg-on:#ff4d4d;--seg-off:#262c37;--seg-x:#f5a524;
-  --b1:#4fd1b5;--b0:#6b7484;--bx:#fbbf24;
+  --b1:#4fd1b5;--b0:#8a94a6;--bx:#fbbf24;
   --shadow:none;
   --k0:#ff5c7a;--k1:#7b93ff;--k2:#4ccf5a;--k3:#ffa04d;--k4:#c77dff;--k5:#2ad1d1;--k6:#a8b0ba;--k7:#e6d84a;
   color-scheme:dark;

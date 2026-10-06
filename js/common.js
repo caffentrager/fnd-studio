@@ -29,8 +29,12 @@ const store = {
 // 파일을 끌어다 놓을 때 화면 전체에 띄우는 안내 (검증·채점 탭이 문구만 바꿔 같이 쓴다)
 function showDropOverlay(text){ const el = $('#drop'); el.textContent = text; el.hidden = false; }
 
-// 컨트롤을 조작한 뒤 포커스가 남으면 방향키가 단계 이동에 안 쓰이므로 놓아준다
-const blurAfter = fn => e => { fn(e); e.target.blur(); };
+// 마우스로 컨트롤을 조작한 뒤에는 포커스를 놓아 방향키가 단계 이동에 쓰이게 한다.
+// 키보드로 조작한 경우에는 포커스를 그대로 둔다 (키보드 사용자가 자리를 잃지 않도록)
+let lastByPointer = false;
+addEventListener('pointerdown', () => { lastByPointer = true; }, true);
+addEventListener('keydown', () => { lastByPointer = false; }, true);
+const blurAfter = fn => e => { fn(e); if (lastByPointer) e.target.blur(); };
 // 비동기 핸들러의 오류를 알림으로 보여준다
 const guard = fn => async (...args) => { try { return await fn(...args); } catch (e) { toast(e.message || String(e)); } };
 

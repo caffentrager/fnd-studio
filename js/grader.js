@@ -20,7 +20,7 @@ const GR = {
 };
 let graderEnabled = () => true;                  // 드롭에 반응할지 (studio.js가 채점 탭일 때만 true가 되게 바꾼다)
 
-const specSig = () => [DS.seg.join(''), GR.policy, GR.allowBlank].join('|');
+const specSig = () => [DS.seg.join(''), GR.policy, GR.allowBlank, POL.low].join('|');
 const gradeBlocked = () => isBlank() && !GR.allowBlank;
 const byName = new Intl.Collator('ko', {numeric:true, sensitivity:'base'});
 
@@ -165,7 +165,7 @@ function renderGrade(progress = ''){
       '<button id="gGoDesign">설계 탭으로</button> <button id="gForce" title="모든 세그먼트가 꺼져 있어야 일치로 봅니다">빈 FND로 그래도 채점</button>'
     : isBlank()
       ? '<span class="gwarn">만든 FND가 비어 있어, 모든 출력이 꺼져 있어야 일치로 봅니다.</span>'
-      : `기준: 만든 FND · 돈케어 <b>${dcCells}</b>칸(어떤 값이어도 통과)`;
+      : `기준: 만든 FND · 돈케어 <b>${dcCells}</b>칸(어떤 값이어도 통과)${POL.low ? ' · 출력 <b>Active Low</b>(0이 켜짐)' : ''}`;
   if (!n) return;
 
   const wait = count('wait');
@@ -181,6 +181,7 @@ function renderGrade(progress = ''){
   });
   $('#gSort').value = GR.sort;
   $('#gPolicy').value = GR.policy;
+  $('#gPolarity').value = POL.low ? 'low' : 'high';
 
   const rows = gradeView().map(it => {
     const err = it.status === 'error' || it.status === 'wait';
@@ -200,16 +201,21 @@ function renderGrade(progress = ''){
 }
 
 /* ─ CSV ─ */
-const csvCell = s => /[",\n]/.test(s) ? `"${String(s).replace(/"/g, '""')}"` : String(s);
+// 문자열이 = + - @ 탭 으로 시작하면 엑셀이 수식으로 실행할 수 있으므로 앞에 '를 붙인다 (파일·폴더 이름은 학생이 정한다)
+const csvCell = v => {
+  let s = String(v);
+  if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
 function gradeCsv(){
-  const head = ['파일', '판정', '일치', '불일치', '누락', '불일치 입력', '불일치 상세', '누락 입력', '입력 기준', '입력 신호', '채점 방식', '비고'];
+  const head = ['파일', '판정', '일치', '불일치', '누락', '불일치 입력', '불일치 상세', '누락 입력', '입력 기준', '입력 신호', '채점 방식', '출력 극성', '비고'];
   const rows = [...GR.items].sort((a, b) => byName.compare(a.name, b.name)).map(it => [
     it.name, STATUS_LABEL[it.status], it.ok ?? '', it.bad ?? '', it.miss ?? '',
     it.fails ? failText(it) : '',
     it.fails ? it.fails.map(f => `${hexDigit(f.v)}@${f.t} 기대 ${letters(f.want)} 실제 ${letters(f.got)}`).join(' / ') : '',
     it.missing ? missText(it) : '',
     it.basis ? BASIS_LABEL[it.basis.kind] : '', it.basis ? it.basis.names : '',
-    it.basis ? POLICY_LABEL[GR.policy] : '', it.note || '']);
+    it.basis ? POLICY_LABEL[GR.policy] : '', it.basis ? polarityName() : '', it.note || '']);
   return [head, ...rows].map(r => r.map(csvCell).join(',')).join('\n');
 }
 function saveGradeCsv(){

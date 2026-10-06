@@ -114,7 +114,7 @@ const S = {
 /* ════════════════════════════════════════════════════════════════
    3. 7-세그먼트: 판정 · SVG
    ════════════════════════════════════════════════════════════════ */
-const segBits = (r, D = S.D) => D.seg && D.seg.map(i => r.bits[i]);
+const segBits = (r, D = S.D) => D.seg && D.seg.map(i => litBit(r.bits[i]));      // 출력 극성을 적용한 "켜짐=1" 값
 
 // 행의 입력값(0~15). VECTOR가 있으면 그 값이고, 없으면 추정한 입력 신호 4개(MSB→LSB)로 계산한다
 function inputValueOf(r, inputs){
@@ -301,6 +301,7 @@ function renderNotes(){
   const D = S.D, notes = [...D.warns];
   if (!D.signals.length) notes.push('신호가 없는 결과 파일입니다. 시뮬레이션에 WATCH 신호가 지정됐는지 확인해 주세요.');
   else if (D.seg && !D.vec && !(S.mode === 'custom' && S.inputs.length === 4)) notes.push('A–G 출력은 있지만 입력값을 묶은 VECTOR가 없어 자동 판정은 하지 않습니다. 눈으로 확인하거나 회로에 VECTOR를 추가해 주세요.');
+  if (D.seg && POL.low) notes.push('출력 극성이 Active Low(공통 애노드)입니다. 파일의 0을 "켜짐"으로 읽습니다. (진리표의 값은 파일 그대로)');
   if (D.seg && S.mode === 'custom' && isBlank()) notes.push('검증 기준이 "만든 FND"인데 만든 모양이 비어 있어, 모든 출력이 꺼져 있어야 일치로 봅니다.');
   $('#notes').innerHTML = notes.map(t => `<div class="note">${esc(t)}</div>`).join('');
 }
@@ -424,15 +425,22 @@ function refreshSelection(follow = true){
    ════════════════════════════════════════════════════════════════ */
 const LANE_H = 28, HEAD_H = 26, WAVE_PAD = 8;
 
+// 파형에 그릴 행들과 행 간격의 중앙값.
+// 마지막 행이 MAX_TIME에 찍힌 "끝 표시"(바로 앞 행과 값이 같음)면 제외한다.
+// MAX_TIME에 있어도 값이 바뀌었거나, MAX_TIME가 아닌 시각의 행은 실제 상태이므로 남긴다
+function waveRows(D){
+  const rows = D.rows.slice();
+  const gaps = rows.slice(1).map((r, i) => r.t - rows[i].t).sort((a, b) => a - b);
+  const median = gaps.length ? gaps[gaps.length >> 1] || 1 : 1;
+  const [a, b] = [rows.at(-1), rows.at(-2)];
+  if (rows.length > 2 && D.maxTime != null && a.t === D.maxTime && a.bits === b.bits) rows.pop();
+  return {rows, median};
+}
+
 function buildWave(){
   const D = S.D, w = S.wave;
-  // 마지막 행이 MAX_TIME에 찍힌 "끝 표시"(바로 앞 행과 값이 같음)면 파형에서는 제외.
-  // MAX_TIME에 있어도 값이 바뀌었거나, MAX_TIME가 아닌 시각의 행은 실제 상태이므로 남긴다
-  w.rows = D.rows.slice();
-  const gaps = w.rows.slice(1).map((r, i) => r.t - w.rows[i].t).sort((a, b) => a - b);
-  const median = gaps.length ? gaps[gaps.length >> 1] || 1 : 1;
-  const [a, b] = [w.rows.at(-1), w.rows.at(-2)];
-  if (w.rows.length > 2 && D.maxTime != null && a.t === D.maxTime && a.bits === b.bits) w.rows.pop();
+  const {rows, median} = waveRows(D);
+  w.rows = rows;
   w.t0 = w.rows[0].t;
   w.tEnd = w.rows.at(-1).t + (w.rows.length > 1 ? median : 1);
 

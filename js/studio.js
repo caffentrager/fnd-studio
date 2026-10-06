@@ -40,6 +40,17 @@ function setVerifyMode(mode){
   S.mode = mode; $('#mode').value = mode; store.set('mode', mode);
 }
 
+/* ─ 출력 극성 (검증·채점 탭의 선택 상자와 상태, 저장을 함께) ─ */
+function setPolarity(low){
+  POL.low = !!low; store.set('polarity', POL.low ? 'low' : 'high');
+  $('#polarity').value = $('#gPolarity').value = POL.low ? 'low' : 'high';
+  if (S.D) reverify();
+  if (GR.items.length) regradeAll();
+  renderGrade();
+}
+$('#polarity').onchange = $('#gPolarity').onchange = blurAfter(e => setPolarity(e.target.value === 'low'));
+$('#polarity').value = $('#gPolarity').value = POL.low ? 'low' : 'high';
+
 /* ─ 설계 → 검증: 지금 만든 FND 자체를 검증 탭에서 본다 (파형·표·판정) ─ */
 function openDesignInVerify(){
   setVerifyMode('custom');
@@ -68,3 +79,10 @@ addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 // 검증 탭의 기본 검증 기준은 "만든 FND" (저장된 선택이 있으면 그것)
 if (!store.get('mode')) setVerifyMode('custom');
 showTab(location.hash.slice(1) || 'design');
+
+// 주소에 ?test가 있으면 자동 테스트를 실행한다 (tests.html이 이 주소로 보내 준다)
+if (/[?&]test\b/.test(location.search)) {
+  const s = document.createElement('script');
+  s.src = 'js/tests.js?t=' + Date.now();
+  document.body.append(s);
+}

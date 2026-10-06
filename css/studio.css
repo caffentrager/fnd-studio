@@ -39,3 +39,12 @@
 #gTbl tbody tr{cursor:default}
 .gopen{min-height:26px;padding:0 10px;font-size:12px}
 .gopen:disabled{opacity:.4;cursor:default}
+
+/* 자동 테스트 결과 (?test) */
+.testpanel{position:sticky;top:0;z-index:50;margin:0 0 12px;padding:12px 16px;max-height:60vh;overflow:auto;background:var(--panel);border-bottom:2px solid var(--line);box-shadow:var(--shadow)}
+.testpanel h2{margin:0 0 8px;color:var(--ink)}
+.testpanel ul{margin:0;padding:0;list-style:none;font-size:13px}
+.testpanel li{padding:2px 0}
+.testpanel li.tp{color:var(--ok)} .testpanel li.tf{color:var(--bad);font-weight:600}
+.testpanel h2 .tp{color:var(--ok)} .testpanel h2 .tf{color:var(--bad)}
+.testpanel pre{margin:2px 0 4px 18px;font:12px var(--mono);white-space:pre-wrap;color:var(--bad)}

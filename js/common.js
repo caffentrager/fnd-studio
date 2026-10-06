@@ -87,6 +87,12 @@ const DS = {seg:Array(16).fill(BLANK)};
 const hexDigit = v => v.toString(16).toUpperCase();
 const isBlank = () => DS.seg.every(s => s === BLANK);
 
+/* 출력 극성 (검증·채점이 함께 씀): 기본은 1이 켜짐(Active High). low면 0이 켜짐(Active Low · 공통 애노드).
+   파일의 값은 그대로 두고, 세그먼트를 읽을 때 litBit으로 "켜짐=1" 값으로 바꿔 해석한다. X는 그대로 X */
+const POL = {low: store.get('polarity') === 'low'};
+const polarityName = () => POL.low ? 'Active Low' : 'Active High';
+const litBit = b => POL.low ? (b === '0' ? '1' : b === '1' ? '0' : b) : b;
+
 function loadDesign(){
   try {
     const a = JSON.parse(store.get('design'));
@@ -95,12 +101,12 @@ function loadDesign(){
 }
 const saveDesign = () => store.set('design', JSON.stringify(DS.seg));
 
-// 뷰어가 그대로 읽는 MySim 결과 형식 (출력 A~G 다음에 입력 W X Y Z, 10 단위 시간)
+// 뷰어가 그대로 읽는 MySim 결과 형식 (출력 A~G 다음에 입력 W X Y Z, 10 단위 시간). 출력 극성을 따른다
 function designOut(){
   const names = [...SEG_NAMES, ...IN_NAMES];
   return ['[MySim Result V3.5]', `MAX_TIME ${15 * 10};`, `VECTOR IN ${IN_NAMES.join(' ')};`,
     `WATCH ${names.join(' ')} IN;`, `TABLE_ORDER ${names.join(' ')};`, 'START',
-    ...DS.seg.map((s, v) => `${v * 10} ${s}${bstr(v, 4)}`), 'END', ''].join('\n');
+    ...DS.seg.map((s, v) => `${v * 10} ${[...s].map(litBit).join('')}${bstr(v, 4)}`), 'END', ''].join('\n');
 }
 
 /* ════════════════════════════════════════════════════════════════

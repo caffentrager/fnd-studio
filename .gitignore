@@ -8,7 +8,6 @@ mysim.*
 # 단, 개인 정보를 제거한 샘플은 올린다
 !samples/
 !samples/*.out
-!samples/*.vhdl
 
 # 편집기 · 도구
 .claude/

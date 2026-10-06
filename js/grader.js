@@ -36,7 +36,7 @@ function gradeInputs(D){
   }
   const rest = range(D.signals.length).filter(i => !D.seg.includes(i));
   if (rest.length === 4) return {kind:'order', idx:rest, names:names(rest)};
-  const idx = inputsFor(D, null);
+  const idx = inputsFor(D);
   if (idx.length === 4 && !idx.some(i => D.seg.includes(i))) return {kind:'infer', idx, names:names(idx)};
   return {error:'입력 신호를 알 수 없습니다 (VECTOR 없음, 입력 추정 실패)'};
 }

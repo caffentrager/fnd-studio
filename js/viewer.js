@@ -24,7 +24,7 @@ const stampOf = f => f.lastModified + ':' + f.size;         // 파일이 바뀌�
 let viewerEnabled = () => true;                             // 키보드·드롭에 반응할지 (studio.js가 검증 탭일 때만 true가 되게 바꾼다)
 
 /* ════════════════════════════════════════════════════════════════
-   1. 파서  (.out → D,  vhdl → 포트)
+   1. 파서  (.out → D)
       D   = { maxTime, signals[], vectors[], rows[], seg, vec, warns[] }
       row = { i, t, bits, vs[], v }     bits: 신호별 '0'|'1'|'X' 문자열,
                                         vs: 벡터별 값(X 있으면 null), v: 판정용 입력값
@@ -94,18 +94,6 @@ function parse(text){
   return D;
 }
 
-// vhdl entity의 포트 방향. 이름을 콤마로 나열한 선언(a, b : in …)도 처리한다
-function parsePorts(text){
-  const ent = /entity\s+\w+\s+is([\s\S]*?)end\s+\w+\s*;/i.exec(text);
-  if (!ent) return null;
-  const ins = new Set(), outs = new Set();
-  for (const m of ent[1].matchAll(/([\w,\s]+?)\s*:\s*(in|out|inout|buffer)\b/gi)) {
-    const dest = m[2].toLowerCase() === 'in' ? ins : outs;
-    m[1].split(/[\s,]+/).filter(Boolean).forEach(n => dest.add(n.toUpperCase()));
-  }
-  return ins.size ? {ins, outs} : null;
-}
-
 /* ════════════════════════════════════════════════════════════════
    2. 상태
    ════════════════════════════════════════════════════════════════ */
@@ -119,7 +107,6 @@ const S = {
   evals:[],               // 행별 판정 결과
   auto:null,              // 자동 재생 타이머
   galleryAll:false,       // 전체 출력을 칸 수 제한 없이 그릴지
-  ports:null,             // vhdl에서 읽은 포트
   inputs:[], cols:[],     // 추정한 입력 신호 / 진리표 열 순서(입력 → 출력)
   handle:null, stamp:'', watch:null,          // 파일 핸들(File System Access API)과 변경 감지
   wave:{lanes:[], rows:[], t0:0, tEnd:1, ppu:null},   // 파형: ppu = 시간 1당 픽셀 수
@@ -253,13 +240,8 @@ function setAuto(on){
    5. 입력 신호 추정 (진리표에서 입력 열을 앞으로 모으는 데 사용)
    ════════════════════════════════════════════════════════════════ */
 /* .out에는 입·출력 구분이 없으므로
-   ① vhdl 포트가 있으면 그것을 쓰고,
-   ② 없으면 "행을 유일하게 결정하면서 시간순으로 0,1,2…로 세는" 신호 조합을 찾는다. */
-function detectInputs(D, ports = S.ports){
-  if (ports) {
-    const idx = range(D.signals.length).filter(i => ports.ins.has(D.signals[i].toUpperCase()));
-    if (idx.length && idx.length < D.signals.length) return idx;
-  }
+   "행을 유일하게 결정하면서 시간순으로 0,1,2…로 세는" 신호 조합을 찾는다. */
+function detectInputs(D){
   const N = D.signals.length;
   if (N < 2 || N > CFG.maxSignals) return null;
 
@@ -302,14 +284,14 @@ function displayOrder(D, idxs){
   return same ? same.idx.slice() : idxs.slice().sort((a, b) => a - b);
 }
 // 입력 신호(MSB→LSB). 찾지 못하면 빈 배열. 화면 상태와 무관해 채점에서도 쓴다
-function inputsFor(D, ports = null){
-  const found = detectInputs(D, ports);
+function inputsFor(D){
+  const found = detectInputs(D);
   return found ? displayOrder(D, found) : [];
 }
 
 // 진리표 열 순서: 입력 신호(MSB→LSB) 다음에 나머지(출력)
 function autoInputs(){
-  S.inputs = inputsFor(S.D, S.ports);
+  S.inputs = inputsFor(S.D);
   S.cols = [...S.inputs, ...range(S.D.signals.length).filter(i => !S.inputs.includes(i))];
 }
 
@@ -578,16 +560,16 @@ function zoomWave(factor, anchorPx){
    8. 파일 열기
    ════════════════════════════════════════════════════════════════ */
 /* 새 파일을 화면에 올린다.  keep: 같은 파일을 다시 읽는 경우(선택 위치·확대 유지)
-   ports/handle/stamp: 새로 열 때 함께 기억할 vhdl 포트와 파일 핸들
+   handle/stamp: 새로 열 때 함께 기억할 파일 핸들
    trimEnd: 끝에 연속된 X 행을 "시뮬레이션 끝 표시"로 보고 접기에서 뺄지 */
-function loadBuffer(buf, name, {keep = false, ports = null, handle = null, stamp = '', trimEnd = true} = {}){
+function loadBuffer(buf, name, {keep = false, handle = null, stamp = '', trimEnd = true} = {}){
   let D;
   try { D = parse(decodeBuf(buf)); }
   catch (e) { toast(e.message); return false; }
 
   S.D = D;
   if (keep) S.stamp = stamp;
-  else { S.cur = 0; S.wave.ppu = null; S.ports = ports; S.trimEnd = trimEnd; S.galleryAll = false; setSource(handle, stamp); }
+  else { S.cur = 0; S.wave.ppu = null; S.trimEnd = trimEnd; S.galleryAll = false; setSource(handle, stamp); }
   autoInputs();                                   // 입력 추정이 판정(만든 FND 기준)보다 먼저 필요하다
   computeSteps(); evalAll();
   if (!keep) S.cur = S.steps[0];
@@ -610,30 +592,16 @@ function setSource(handle, stamp){
   $('#btnReload').hidden = $('#watchWrap').hidden = !handle;
 }
 
-const isVhdl = f => /^(vhdl?|.*\.vhdl?)$/i.test(f.name);
-const readPorts = async file => parsePorts(decodeBuf(await file.arrayBuffer()));
-
 async function loadHandle(handle){
   const f = await handle.getFile();
   loadBuffer(await f.arrayBuffer(), f.name, {handle, stamp:stampOf(f)});
 }
 
-// vhdl 파일만 따로 주어진 경우: 이미 연 파일에 포트 정보를 적용
-async function loadVhdl(file){
-  const ports = await readPorts(file);
-  if (!ports) return toast('vhdl 파일에서 입력 포트를 찾지 못했습니다.');
-  S.ports = ports;
-  if (!S.D) return;
-  autoInputs(); renderTable(); refreshSelection(false);
-  toast('vhdl의 in 포트를 입력 신호로 사용합니다');
-}
-
-// 여러 파일이 오면 vhdl은 포트 정보로, 나머지 첫 파일을 .out으로 연다
+// 여러 파일이 오면 첫 .out(없으면 첫 파일)을 연다
 async function loadFiles(files){
   files = [...files];
-  const vhdl = files.find(isVhdl), out = files.find(f => !isVhdl(f));
-  if (!out) return vhdl && loadVhdl(vhdl);
-  loadBuffer(await out.arrayBuffer(), out.name, {ports: vhdl ? await readPorts(vhdl) : null});
+  const f = files.find(f => /\.out$/i.test(f.name)) ?? files[0];
+  loadBuffer(await f.arrayBuffer(), f.name);
 }
 
 async function openPicker(){
@@ -737,7 +705,7 @@ addEventListener('drop', guard(async e => {
   if (!viewerEnabled()) return;
   e.preventDefault(); dragDepth = 0; $('#drop').hidden = true;
   const {files, items} = e.dataTransfer;
-  if (files.length === 1 && items[0]?.getAsFileSystemHandle && !isVhdl(files[0])) {
+  if (files.length === 1 && items[0]?.getAsFileSystemHandle) {
     try { const h = await items[0].getAsFileSystemHandle(); if (h?.kind === 'file') return await loadHandle(h); } catch { /* 일반 파일로 처리 */ }
   }
   if (files.length) await loadFiles(files);

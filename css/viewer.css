@@ -1,7 +1,7 @@
 /* 뷰어 전용 스타일: 빈 화면 · 알림 · 출력 검증 · 전체 출력 · 타이밍 파형 */
 .noseg :is(#galleryCard,#big){display:none}
 @media(max-width:940px){                       /* 좁은 화면: 검증 → 전체 출력 → 파형 → 진리표 순서 */
-  #verifyCard{order:1} #galleryCard{order:2} #waveCard{order:3} #tableCard{order:4}
+  #verifyCard{order:1} #mapCard{order:2} #galleryCard{order:3} #waveCard{order:4} #tableCard{order:5}
 }
 
 .empty{border:2px dashed var(--line);border-radius:16px;padding:64px 24px;text-align:center;color:var(--muted);background:var(--panel)}

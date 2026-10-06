@@ -30,6 +30,7 @@ const byName = new Intl.Collator('ko', {numeric:true, sensitivity:'base'});
    infer   그 밖에는 값이 0,1,2…로 세는 신호 조합을 찾는다 (가장 불확실) */
 function gradeInputs(D){
   const names = idx => idx.map(i => D.signals[i]).join(' ');
+  if (D.vec && D.vec.src === 'map') return {kind:'map', idx:D.vec.idx, names:names(D.vec.idx)};   // 이름 규칙 · 직접 지정
   if (D.vec) {
     if (D.vec.idx.length !== 4) return {error:`VECTOR가 ${D.vec.idx.length}비트입니다 (입력 4비트가 아님): ${names(D.vec.idx)}`};
     return {kind:'vector', idx:D.vec.idx, names:names(D.vec.idx)};
@@ -46,7 +47,7 @@ function gradeBuffer(name, buf){
   let D;
   try { D = parse(decodeBuf(buf)); }
   catch (e) { return {status:'error', note:e.message}; }
-  if (!D.seg) return {status:'error', note:'A–G 신호가 없습니다'};
+  if (!D.seg) return {status:'error', note:'A–G 신호가 없습니다 (신호 이름 규칙에서 바꿀 수 있습니다)'};
 
   const inp = gradeInputs(D);
   if (inp.error) return {status:'error', note:inp.error};
@@ -129,7 +130,7 @@ async function addToGrade(list){                  // list: [{file, path}]
    3. 화면
    ════════════════════════════════════════════════════════════════ */
 const STATUS_LABEL = {pass:'통과', fail:'불일치', error:'오류', wait:'대기'};
-const BASIS_LABEL = {vector:'VECTOR', order:'추정 · 파일 순서', infer:'추정 · 값 패턴'};
+const BASIS_LABEL = {map:'이름 매핑', vector:'VECTOR', order:'추정 · 파일 순서', infer:'추정 · 값 패턴'};
 const POLICY_LABEL = {stable:'안정 상태', all:'모든 행'};
 const failText = it => it.fails.map(f => `${hexDigit(f.v)}:${f.segs}`).join('  ');
 const missText = it => it.missing.map(hexDigit).join(' ');
@@ -243,6 +244,27 @@ $('#gPolicy').onchange = blurAfter(e => {
   GR.policy = e.target.value === 'all' ? 'all' : 'stable'; store.set('gpolicy', GR.policy);
   regradeAll(); renderGrade();
 });
+/* ─ 신호 이름 규칙 (ALIAS는 viewer.js): 적용하면 올려 둔 파일을 모두 다시 채점하고 열려 있는 검증 파일에도 반영 ─ */
+const aliasIsDefault = () => ALIAS.seg.join() === ALIAS_DEFAULT().seg.join() && ALIAS.inp.every(s => !s);
+function renderAlias(){
+  const field = (label, val, ph) => `<label class="mp"><span>${label}</span><input type="text" value="${esc(val)}" placeholder="${esc(ph)}" aria-label="${label} 신호 이름"></label>`;
+  $('#aliasGrid').innerHTML = [...SEG_NAMES].map((c, k) => field(c, ALIAS.seg[k], c)).join('') +
+    IN_NAMES.map((c, k) => field(c, ALIAS.inp[k], '(VECTOR/추정)')).join('');
+  $('#aliasState').textContent = aliasIsDefault() ? '· 기본값' : '· 사용 중';
+}
+function applyAlias(){
+  const vals = [...$$('#aliasGrid input')].map(i => i.value.trim());
+  const inp = vals.slice(7);
+  if (inp.some(Boolean) && !inp.every(Boolean)) return toast('입력 W X Y Z는 4개 모두 적거나 모두 비워 두세요');
+  ALIAS.seg = vals.slice(0, 7).map((v, k) => v || SEG_NAMES[k]); ALIAS.inp = inp;
+  saveAlias(); renderAlias();
+  regradeAll(); renderGrade(); reapplyAlias();
+  toast('이름 규칙을 적용했습니다');
+}
+$('#aliasApply').onclick = applyAlias;
+$('#aliasReset').onclick = () => { Object.assign(ALIAS, ALIAS_DEFAULT()); saveAlias(); renderAlias(); regradeAll(); renderGrade(); reapplyAlias(); };
+renderAlias();
+
 $('#gSpec').onclick = e => {
   if (e.target.closest('#gGoDesign')) showTab('design', {focus:true});
   else if (e.target.closest('#gForce')) { GR.allowBlank = true; regradeAll(); renderGrade(); }

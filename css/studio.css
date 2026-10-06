@@ -48,3 +48,17 @@
 .testpanel li.tp{color:var(--ok)} .testpanel li.tf{color:var(--bad);font-weight:600}
 .testpanel h2 .tp{color:var(--ok)} .testpanel h2 .tf{color:var(--bad)}
 .testpanel pre{margin:2px 0 4px 18px;font:12px var(--mono);white-space:pre-wrap;color:var(--bad)}
+
+/* 신호 매핑(검증) · 이름 규칙(채점) */
+#mapCard>summary,.alias>summary{cursor:pointer;font-weight:600;font-size:13px}
+#mapCard small,.alias small{font-weight:400;color:var(--muted);margin-left:6px}
+.mapgrid{display:flex;gap:10px;align-items:center;margin:8px 0}
+.mapgrid>b{flex:none;width:44px;font-size:12px;color:var(--muted)}
+.maprow{display:flex;flex-wrap:wrap;gap:6px 10px}
+.mp{display:inline-flex;align-items:center;gap:4px}
+.mp span{font:600 12px var(--mono)}
+.mp select{max-width:110px}
+.mp input{width:120px}
+.maptools{display:flex;gap:8px;margin-top:8px}
+.alias{margin:0 0 10px;padding:8px 12px;background:var(--soft);border-radius:10px}
+.aliasgrid{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0}

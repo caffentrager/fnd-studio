@@ -30,9 +30,9 @@ const bcdSpec = () => range(16).map(v => v > 9 ? ALL_X : PAT[v][0]);
 
 // 만든 FND·채점 설정을 바꿔 쓰고 끝나면 되돌린다
 function withState(fn){
-  const keep = {seg:DS.seg.slice(), policy:GR.policy, allow:GR.allowBlank, low:POL.low};
+  const keep = {seg:DS.seg.slice(), policy:GR.policy, allow:GR.allowBlank, low:POL.low, alias:JSON.stringify(ALIAS)};
   try { return fn(); }
-  finally { DS.seg = keep.seg; GR.policy = keep.policy; GR.allowBlank = keep.allow; POL.low = keep.low; }
+  finally { DS.seg = keep.seg; GR.policy = keep.policy; GR.allowBlank = keep.allow; POL.low = keep.low; Object.assign(ALIAS, JSON.parse(keep.alias)); }
 }
 
 /* ════════════════ CSV ════════════════ */
@@ -270,6 +270,61 @@ test('이력: 취소 후에도 저장값(localStorage)과 모양이 같다', () 
   eq(JSON.parse(store.get('design')), DS.seg);
 }));
 
+/* ════════════════ 신호 매핑 (이름 규칙 · 직접 지정) ════════════════ */
+const ODD_SIGNALS = 'SEG0 SEG1 SEG2 SEG3 SEG4 SEG5 SEG6 I3 I2 I1 I0';         // A~G · W X Y Z가 아닌 이름
+const oddFile = (opts, tweak) => enc(mkOut(ODD_SIGNALS, bcdRows(tweak), opts));
+const oddAlias = () => { ALIAS.seg = range(7).map(k => `SEG${k}`); ALIAS.inp = ['I3', 'I2', 'I1', 'I0']; };
+test('매핑: 이름이 다르면 기본 규칙으로는 A–G를 못 찾는다', () => withState(() => {
+  DS.seg = bcdSpec();
+  eq(parse(mkOut(ODD_SIGNALS, bcdRows())).seg, null);
+  eq(gradeBuffer('o.out', oddFile()).status, 'error');
+}));
+test('매핑: 이름 규칙(별칭)으로 A~G와 입력을 찾아 채점한다', () => withState(() => {
+  DS.seg = bcdSpec(); GR.policy = 'stable'; oddAlias();
+  const D = parse(mkOut(ODD_SIGNALS, bcdRows()));
+  eq(D.seg, [0, 1, 2, 3, 4, 5, 6]); eq(D.vec.idx, [7, 8, 9, 10]); eq(D.vec.src, 'map');
+  const r = gradeBuffer('o.out', oddFile());
+  eq([r.status, r.basis.kind, r.basis.names], ['pass', 'map', 'I3 I2 I1 I0']);
+  const bad = gradeBuffer('o.out', oddFile({}, (v, s) => v === 8 ? '1111110' : s));
+  eq([bad.status, bad.fails[0].v, bad.fails[0].segs], ['fail', 8, 'G']);
+}));
+test('매핑: 대소문자 무시, 한 칸에 이름 여러 개', () => withState(() => {
+  ALIAS.seg = ['seg_a, a', 'B', 'C', 'D', 'E', 'F', 'G'];
+  const D = parse(mkOut('SEG_A B C D E F G W X Y Z', [[0, '11111100000']]));
+  eq(D.seg, [0, 1, 2, 3, 4, 5, 6]);
+}));
+test('매핑: 두 글자가 같은 신호를 가리키면 못 찾은 것으로 본다', () => withState(() => {
+  ALIAS.seg = ['X1', 'X1', 'C', 'D', 'E', 'F', 'G'];
+  eq(parse(mkOut('X1 B C D E F G W X Y Z', [[0, '11111100000']])).seg, null);
+}));
+test('매핑: 입력이 A~G와 겹치면 입력 규칙은 무시하고 파일의 VECTOR를 쓴다', () => withState(() => {
+  ALIAS.inp = ['A', 'W', 'X', 'Y'];
+  const D = parse(mkOut(BCD_SIGNALS, bcdRows(), {vector:'IN W X Y Z'}));
+  eq(D.map.inputs, null); eq(D.vec.src, undefined); eq(D.vec.idx, [7, 8, 9, 10]);
+}));
+test('매핑: 직접 지정(D.map)하면 입력값이 그 신호로 다시 계산된다', () => withState(() => {
+  const D = parse(mkOut(ODD_SIGNALS, bcdRows()));
+  eq(D.seg, null);
+  D.map = {seg:range(7), inputs:[7, 8, 9, 10]}; finishD(D);
+  eq(D.seg, range(7)); eq(D.rows.map(r => r.v), range(10));
+  D.map = {seg:range(7), inputs:[10, 9, 8, 7]}; finishD(D);                  // 순서를 바꾸면 값도 바뀐다
+  eq(D.rows[1].v, 8);
+}));
+test('매핑: 직접 지정 입력이 맨 앞 벡터이고 파일의 VECTOR는 뒤로 간다', () => withState(() => {
+  const D = parse(mkOut(ODD_SIGNALS, bcdRows(), {vector:'IN I2 I1 I0'}));
+  D.map = {seg:range(7), inputs:[7, 8, 9, 10]}; finishD(D);
+  eq(D.vectors.map(v => v.label), ['입력값1', '입력값2']); eq(D.vec.src, 'map');
+}));
+test('매핑: 신호 이름으로 기억한 매핑을 다시 읽을 때 적용한다', () => withState(() => {
+  const keepManual = S.manual, D = parse(mkOut(ODD_SIGNALS, bcdRows()));
+  try {
+    S.manual = {seg:range(7).map(k => `SEG${k}`), inputs:['I3', 'I2', 'I1', 'I0']};
+    ok(applyManualNames(D), '적용 성공'); eq(D.seg, range(7)); eq(D.rows[3].v, 3);
+    S.manual = {seg:range(7).map(k => `NOPE${k}`), inputs:null};
+    ok(!applyManualNames(D), '없는 이름이면 적용하지 않음');
+  } finally { S.manual = keepManual; }
+}));
+
 test('설계: Tab으로 지나는 곳은 FND 칸 16개뿐 (세그먼트는 거치지 않는다)', () => {
   const stops = [...document.querySelectorAll('#digits button, #digits polygon')].filter(e => e.tabIndex >= 0);
   eq(stops.length, 16); ok(stops.every(e => e.classList.contains('dl')), '이름표 버튼만 Tab 대상');
@@ -277,11 +332,13 @@ test('설계: Tab으로 지나는 곳은 FND 칸 16개뿐 (세그먼트는 거�
 
 /* ════════════════ 실행 · 표시 ════════════════ */
 async function runTests(){
-  const results = [];
+  const results = [], aliasKept = JSON.stringify(ALIAS);        // 사용자의 이름 규칙은 건드리지 않는다
   for (const t of TESTS) {
+    Object.assign(ALIAS, ALIAS_DEFAULT());                      // 모든 테스트는 기본 이름 규칙에서 시작
     try { await t.fn(); results.push({name:t.name, pass:true}); }
     catch (e) { results.push({name:t.name, pass:false, msg:e.message}); }
   }
+  Object.assign(ALIAS, JSON.parse(aliasKept));
   const failed = results.filter(r => !r.pass);
   const box = document.createElement('section');
   box.id = 'testPanel'; box.className = 'testpanel';

@@ -71,12 +71,49 @@ function parse(text){
   }
   if (!D.rows.length) throw new Error('데이터 행이 없습니다.');
 
-  // 벡터: 화면에는 파일에 적힌 이름 대신 "입력값"으로 표시한다
   for (const v of D.vectors) {
     v.idx = v.members.map(n => D.signals.indexOf(n));
     if (v.idx.includes(-1)) { D.warns.push('VECTOR 정의: 일부 신호를 찾지 못했습니다.'); v.idx = v.idx.filter(i => i >= 0); }
   }
-  D.vectors = D.vectors.filter(v => v.idx.length);
+  D.fileVectors = D.vectors.filter(v => v.idx.length);        // 파일의 VECTOR 문장 (매핑으로 입력이 지정되면 그 벡터가 앞에 붙는다)
+  D.map = resolveNames(D);
+  finishD(D);
+  return D;
+}
+
+/* 신호 이름 규칙(별칭): 7-세그먼트 A~G와 입력 W X Y Z에 해당하는 신호 이름들 (대소문자 무시, 한 칸에 여러 이름 가능).
+   기본은 A~G 이름 그대로이고 입력은 비어 있다(파일의 VECTOR 또는 추정을 쓴다) */
+const ALIAS_DEFAULT = () => ({seg:[...'ABCDEFG'], inp:['', '', '', '']});
+const ALIAS = ALIAS_DEFAULT();
+function loadAlias(){
+  try {
+    const a = JSON.parse(store.get('alias'));
+    if (a && a.seg?.length === 7 && a.inp?.length === 4 && [...a.seg, ...a.inp].every(s => typeof s === 'string')) Object.assign(ALIAS, a);
+  } catch { /* 저장된 값이 없거나 깨졌으면 기본값 */ }
+}
+const saveAlias = () => store.set('alias', JSON.stringify(ALIAS));
+loadAlias();
+const nameList = s => s.split(/[,\s]+/).map(n => n.trim().toUpperCase()).filter(Boolean);
+
+// 이름 규칙으로 신호 번호를 찾는다 → {seg:[7개]|null, inputs:[4개]|null}. 같은 신호가 둘에 걸리면 못 찾은 것으로 본다
+function resolveNames(D){
+  const up = D.signals.map(s => s.toUpperCase());
+  const find = list => { const names = nameList(list); return names.length ? up.findIndex(n => names.includes(n)) : -1; };
+  const distinct = idx => idx.every(i => i >= 0) && new Set(idx).size === idx.length;
+  const seg = ALIAS.seg.map(find), inputs = ALIAS.inp.map(find);
+  return {seg:distinct(seg) ? seg : null, inputs:distinct(inputs) && !inputs.some(i => seg.includes(i)) ? inputs : null};
+}
+
+/* D.map(= {seg, inputs})에 따라 벡터 · 입력값(r.vs, r.v) · 7-세그먼트(D.seg, D.vec)를 정한다.
+   inputs가 있으면 그 4개 신호가 "입력값" 벡터(맨 앞)가 된다. 화면에는 파일에 적힌 이름 대신 "입력값"으로 표시한다 */
+function finishD(D){
+  const {seg, inputs} = D.map;
+  let vecs = D.fileVectors;
+  if (inputs) {
+    const key = inputs.join(',');
+    vecs = [{name:'IN', members:inputs.map(i => D.signals[i]), idx:inputs.slice(), src:'map'}, ...vecs.filter(v => v.idx.join(',') !== key)];
+  }
+  D.vectors = vecs.map(v => ({...v}));
   D.vectors.forEach((v, k) => { v.label = D.vectors.length > 1 ? `입력값${k + 1}` : '입력값'; });
   for (const r of D.rows) r.vs = D.vectors.map(v => {
     const s = v.idx.map(i => r.bits[i]).join('');
@@ -84,13 +121,10 @@ function parse(text){
   });
 
   // 7-세그먼트: A~G 신호가 모두 있을 때. 판정에 쓸 입력 벡터는 A~G를 포함하지 않는 첫 벡터
-  const up = D.signals.map(s => s.toUpperCase());
-  const seg = [...'ABCDEFG'].map(c => up.indexOf(c));
-  D.seg = seg.every(i => i >= 0) ? seg : null;
-  const vk = D.vectors.findIndex(v => !D.seg || !v.idx.some(i => seg.includes(i)));
+  D.seg = seg;
+  const vk = D.vectors.findIndex(v => !D.seg || !v.idx.some(i => D.seg.includes(i)));
   D.vec = vk >= 0 ? D.vectors[vk] : null;
   for (const r of D.rows) r.v = D.vec ? r.vs[vk] : null;
-  return D;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -576,8 +610,8 @@ function loadBuffer(buf, name, {keep = false, handle = null, stamp = '', trimEnd
   catch (e) { toast(e.message); return false; }
 
   S.D = D;
-  if (keep) S.stamp = stamp;
-  else { S.cur = 0; S.wave.ppu = null; S.trimEnd = trimEnd; S.galleryAll = false; setSource(handle, stamp); }
+  if (keep) { S.stamp = stamp; if (S.manual) applyManualNames(D); }
+  else { S.cur = 0; S.wave.ppu = null; S.trimEnd = trimEnd; S.galleryAll = false; S.manual = null; setSource(handle, stamp); }
   autoInputs();                                   // 입력 추정이 판정(만든 FND 기준)보다 먼저 필요하다
   computeSteps(); evalAll();
   if (!keep) S.cur = S.steps[0];
@@ -588,7 +622,7 @@ function loadBuffer(buf, name, {keep = false, handle = null, stamp = '', trimEnd
   $('#fileInfo').innerHTML = `<b>${esc(name)}</b> · ` +
     [`행 ${D.rows.length}`, `신호 ${D.signals.length}`, D.maxTime != null && `MAX_TIME ${D.maxTime}`].filter(Boolean).join(' · ');
 
-  buildWave(); renderNotes(); renderGallery(); renderTable();
+  buildWave(); renderNotes(); renderGallery(); renderTable(); renderMapping(!keep && !D.seg);
   refreshSelection();
   return true;
 }
@@ -646,6 +680,64 @@ function loadDemo(){
   text += '1000 XXXXXXXXXXX\nEND\n';
   loadBuffer(new TextEncoder().encode(text).buffer, '데모 (BCD → 7-세그먼트)');
 }
+/* ════════════════════════════════════════════════════════════════
+   신호 매핑: 파일의 신호 이름이 A~G · W X Y Z가 아닐 때 어느 신호가 무엇인지 직접 지정한다
+   (여러 파일에 한꺼번에 쓰는 이름 규칙은 채점 탭의 ALIAS)
+   ════════════════════════════════════════════════════════════════ */
+// 직접 지정한 매핑은 신호 이름으로 기억해 두었다가 같은 파일을 다시 읽을 때 적용한다
+function applyManualNames(D){
+  const m = S.manual, find = n => D.signals.indexOf(n);
+  const seg = m.seg.map(find), inputs = m.inputs ? m.inputs.map(find) : null;
+  if (seg.includes(-1) || (inputs && inputs.includes(-1))) return false;
+  D.map = {seg, inputs}; finishD(D);
+  return true;
+}
+
+// 매핑이 바뀐 뒤 판정 · 진리표 · 파형을 처음부터 다시 만든다 (선택 위치는 유지)
+function rebuildView(){
+  const D = S.D;
+  autoInputs(); computeSteps(); evalAll();
+  S.cur = Math.min(S.cur, D.rows.length - 1);
+  document.body.classList.toggle('noseg', !D.seg);
+  buildWave(); renderNotes(); renderGallery(); renderTable(); renderMapping();
+  refreshSelection(false);
+}
+
+// 이름 규칙이 바뀌면 열려 있는 파일에도 적용한다 (직접 지정한 매핑이 있으면 그것이 우선)
+function reapplyAlias(){
+  if (!S.D || S.manual) return;
+  S.D.map = resolveNames(S.D); finishD(S.D); rebuildView();
+}
+
+function renderMapping(open = null){
+  const D = S.D, card = $('#mapCard');
+  if (!D) { card.hidden = true; return; }
+  card.hidden = false;
+  if (open != null) card.open = open;
+  const opts = sel => `<option value="">(없음)</option>` + D.signals.map((n, i) => `<option value="${i}"${i === sel ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  const inputs = D.vec && D.vec.idx.length === 4 ? D.vec.idx : S.inputs.length === 4 ? S.inputs : [];
+  const field = (label, sel) => `<label class="mp"><span>${label}</span><select>${opts(sel)}</select></label>`;
+  $('#mapSeg').innerHTML = [...SEG_NAMES].map((c, k) => field(c, D.seg ? D.seg[k] : -1)).join('');
+  $('#mapInp').innerHTML = IN_NAMES.map((c, k) => field(c, inputs[k] ?? -1)).join('');
+  $('#mapState').textContent = S.manual ? '· 직접 지정' : D.map.inputs || (D.seg && ALIAS.seg.join() !== 'A,B,C,D,E,F,G') ? '· 이름 규칙' : D.seg ? '' : '· A–G 없음';
+}
+
+function applyMapFromUi(){
+  const D = S.D, pick = sel => [...$$(sel + ' select')].map(s => s.value === '' ? -1 : Number(s.value));
+  const seg = pick('#mapSeg'), inp = pick('#mapInp'), anyInp = inp.some(i => i >= 0);
+  if (seg.some(i => i < 0) || new Set(seg).size !== 7) return toast('A~G 7개를 서로 다른 신호로 모두 골라 주세요');
+  if (anyInp && (inp.some(i => i < 0) || new Set(inp).size !== 4)) return toast('입력 W X Y Z 4개를 서로 다른 신호로 모두 고르거나, 모두 비워 두세요');
+  if (inp.some(i => seg.includes(i))) return toast('입력은 A~G와 다른 신호여야 합니다');
+  S.manual = {seg:seg.map(i => D.signals[i]), inputs:anyInp ? inp.map(i => D.signals[i]) : null};
+  D.map = {seg, inputs:anyInp ? inp : resolveNames(D).inputs};
+  finishD(D); rebuildView();
+  toast('신호 매핑을 적용했습니다');
+}
+function resetMap(){
+  S.manual = null;
+  S.D.map = resolveNames(S.D); finishD(S.D); rebuildView();
+}
+
 
 /* ════════════════════════════════════════════════════════════════
    9. 이벤트 연결
@@ -669,6 +761,8 @@ $('#mode').onchange = blurAfter(e => {
   if (S.D) reverify();
 });
 $('#fold').onchange = blurAfter(e => { S.fold = e.target.checked; computeSteps(); renderGallery(); renderTable(); refreshSelection(false); });
+$('#mapApply').onclick = applyMapFromUi;
+$('#mapReset').onclick = resetMap;
 $('#gallery').onclick = e => { const t = e.target.closest('.tile'); if (t) selectRow(Number(t.dataset.i)); };
 $('#segSummary').onclick = e => {
   const b = e.target.closest('button[data-i]');
